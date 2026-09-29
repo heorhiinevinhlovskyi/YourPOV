@@ -32,7 +32,14 @@ If you are Claude and the current branch is `main`, create a new branch before m
 
 ## Tech stack
 
-_TBD — fill in once decided (see `DECISIONS.md`)._
+Proposed (see `DECISIONS.md` 002-008, pending team review):
+
+- Next.js (TypeScript) on Vercel
+- LiveKit Cloud for camera video (WebRTC)
+- Cloudflare Stream for viewer delivery (HLS) and recordings
+- Supabase for Postgres, auth, and realtime chat/reactions
+- Stripe for payments
+- Playwright for end-to-end tests
 
 ## Commands
 

@@ -25,3 +25,66 @@ Record every significant decision here, newest at the bottom. Never delete an en
 - Decision: The team agrees never to push directly to `main`. All changes go through a branch and a pull request with at least 1 approval. The rule is written in `CLAUDE.md` so Claude Code follows it too. A ruleset is saved in GitHub settings so it starts enforcing if the repo later moves to a paid organization.
 - Alternatives considered: Making the repo public (free protection, but exposes the project); moving to a paid GitHub Team organization (cost not justified yet).
 - Consequences: Protection depends on discipline. Revisit when the team grows or starts paying for GitHub.
+
+## 002 — Browser-based web app, no native apps for v1
+- Date: 2026-09-28
+- Status: Proposed
+- Decided by: George (pending team review)
+- Context: Camera operators are event guests who will not install an app. Viewers can be on any device.
+- Decision: Everything runs in the browser: camera pages (phones and laptops), host pages, viewer pages.
+- Alternatives considered: Native iOS/Android apps (better background camera and battery control, but install friction and much more work).
+- Consequences: Must work around iOS browser limits (screen lock stops the camera). Native apps can be added later if needed.
+
+## 003 — LiveKit Cloud for the camera side
+- Date: 2026-09-28
+- Status: Proposed
+- Decided by: George (pending team review)
+- Context: Many phones and laptops must publish live video with low delay, and the host needs to see all cameras.
+- Decision: Use LiveKit Cloud (WebRTC SFU). An event is a LiveKit room; each camera is a participant.
+- Alternatives considered: Cloudflare Realtime SFU (cheaper bandwidth but lower-level, more code to write); building our own media server (too much work).
+- Consequences: Good SDKs and React components; egress available for converting and recording. LiveKit is open source, so self-hosting is possible later.
+
+## 004 — Two delivery paths: WebRTC for cameras, HLS via Cloudflare Stream for viewers
+- Date: 2026-09-28
+- Status: Proposed
+- Decided by: George (pending team review)
+- Context: The target audience is thousands of viewers per event. WebRTC at that scale is expensive and hits plan connection limits.
+- Decision: LiveKit egress pushes each camera (and the grid) to Cloudflare Stream live inputs. Viewers watch HLS through Cloudflare's CDN. Early phases may use WebRTC viewers for simplicity.
+- Alternatives considered: WebRTC for all viewers (sub-second delay but costly and capped); cameras publishing directly to Cloudflare Stream via WHIP (WebRTC broadcasts cannot currently be recorded there, and no grid composite).
+- Consequences: Viewers are about 5-15 s behind. Cost scales with viewer minutes. Recording comes built in.
+
+## 005 — Grid view as one server-side composite stream
+- Date: 2026-09-28
+- Status: Proposed
+- Decided by: George (pending team review)
+- Context: Viewers want to see all cameras at once. Playing many separate streams on a phone drains battery and bandwidth.
+- Decision: Use LiveKit RoomComposite egress with a grid layout, published as one extra stream.
+- Alternatives considered: Client-side grid of N separate players (too heavy on phones at HLS scale).
+- Consequences: One extra egress per event (transcode cost). Layout customizable via a custom template.
+
+## 006 — Chat and reactions on Supabase Realtime with event and per-camera channels
+- Date: 2026-09-28
+- Status: Proposed
+- Decided by: George (pending team review)
+- Context: HLS viewers are not in the LiveKit room. Viewers must be able to react to the whole event or to one camera, and camera operators should see reactions for their camera.
+- Decision: Use Supabase Realtime channels `event:<id>` and `event:<id>:cam:<camId>`. Viewers subscribe to the event channel plus the camera they are watching. Reactions are batched server-side into per-second counts.
+- Alternatives considered: LiveKit data messages (only for room participants); Ably or Cloudflare Durable Objects (still options if Supabase Realtime limits are reached).
+- Consequences: One more service to scale, but it is already in the stack.
+
+## 007 — Host-selected audio source
+- Date: 2026-09-28
+- Status: Proposed
+- Decided by: George (pending team review)
+- Context: Multiple microphones cannot play at once, especially in grid view.
+- Decision: The host chooses which camera's audio is used for the grid (and optionally for all views). Camera operators can mute themselves; the host can mute any camera.
+- Alternatives considered: Mixing all microphones (noisy, echo); no audio in grid (poor experience).
+- Consequences: Needs a host control and an audio setting on the event.
+
+## 008 — Application stack
+- Date: 2026-09-28
+- Status: Proposed
+- Decided by: George (pending team review)
+- Context: Small team, first full application, TypeScript experience.
+- Decision: Next.js (TypeScript) on Vercel, Supabase (Postgres, auth, realtime), Stripe for payments, Cloudflare R2 for any extra file storage, Playwright for end-to-end tests.
+- Alternatives considered: Separate frontend and backend services (more to deploy and learn).
+- Consequences: One codebase and one deployment to start. Can split later if needed.
