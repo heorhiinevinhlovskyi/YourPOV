@@ -142,3 +142,12 @@ Record every significant decision here, newest at the bottom. Never delete an en
 - Decision: The event lives in our database, independent of the LiveKit room. A new `standby` state means live with no cameras. All links stay active; viewers see a standby screen with chat still working and reconnect automatically. Cameras rejoin their old slot using a rejoin key stored on the device. Host rights belong to the host's account. Each camera keeps its Stream live input for the whole event; recordings may have several segments per camera. Grid egress stops while empty. The event ends only when the host ends it, or after a long standby with a notification and grace period.
 - Alternatives considered: Ending the event when the LiveKit room closes (viewers would lose the stream and need new links).
 - Consequences: Needs LiveKit webhooks, camera rejoin keys, multi-segment recordings, and an auto-end timer.
+
+## 015 — YourPOV is for all kinds of events
+- Date: 2026-09-28
+- Status: Accepted
+- Decided by: George
+- Context: The idea started from a wedding livestream, and early discussions used weddings as the main example.
+- Decision: YourPOV targets all kinds of live events (concerts, sports, conferences, parties, graduations, religious services, weddings, and more). Docs, product wording, examples, and design stay event-neutral.
+- Alternatives considered: A wedding-only product (smaller market; narrower positioning).
+- Consequences: Features and copy must not assume a wedding. Which event types to market first is still an open question.

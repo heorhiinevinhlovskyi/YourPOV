@@ -4,7 +4,9 @@ _Status: v1 draft (proposed). Reasoning for each choice is in `DECISIONS.md`._
 
 ## 1. Product overview
 
-**Problem.** Event livestreams (weddings, parties, graduations) usually use one phone. Remote viewers miss most of what happens, and nobody can choose what to look at.
+**Problem.** Livestreams of live events usually use one phone or one fixed camera. Remote viewers miss most of what happens, and nobody can choose what to look at.
+
+**Scope.** YourPOV is for **all kinds of live events**: concerts, sports games, conferences, parties, graduations, religious services, weddings, school events, and more. No single event type is the focus, and the product, wording, and design must stay event-neutral.
 
 **Idea.** Turn every guest's phone or laptop into a camera for one shared stream. Viewers watch from any browser, switch between cameras, see all cameras at once in a grid, and react to the whole event or to one camera. After the event, the host gets a synced multi-camera replay, an automatic highlight reel, and a download package.
 
@@ -130,7 +132,7 @@ Limits to handle: phone storage space, iOS `MediaRecorder` format differences, a
 - Each camera and the grid become one Cloudflare Stream live input (egress pushes to it over RTMPS). Viewers play them with **hls.js** (native HLS on iOS Safari).
 - **Main feed (default view):** the host picks a featured camera. Viewers who have not chosen a camera watch the main feed, which follows the host's choices. The current main feed is broadcast on the event realtime channel, and the viewer player switches source.
 - **Auto-director:** when turned on, the main feed automatically switches to the camera with the most reactions over a recent window (for example the last 20 seconds), with a minimum time on each camera (for example 15 seconds) to avoid jumpy switching. The host can override at any time.
-- **Camera labels and pins:** the host names cameras ("Altar", "Dance floor"), reorders, pins, or hides them.
+- **Camera labels and pins:** the host names cameras ("Stage", "Main entrance", "Crowd"), reorders, pins, or hides them.
 - **Single camera view:** the viewer taps any camera to watch it directly.
 - **Grid view ("security guard" view):** LiveKit RoomComposite egress combines all cameras into one grid video on the server. Viewers download one stream, not N, so it works well on phones. The grid plays the host's audio source (see section 6).
 - **Picture-in-picture:** the main feed large plus a second camera small. Costs the viewer two streams, so the small one uses a low rendition.
@@ -230,7 +232,7 @@ event:<eventId>:cam:<camId>  chat and reactions for one camera
 
 - **Moderation:** the host (and optional co-hosts) can delete messages, ban viewers, and turn on slow mode. A profanity filter runs on messages before they are broadcast.
 - **Private events:** optional viewer password or invite-only guest list.
-- **No-filming periods:** the host can pause all cameras (for example "no cameras during the vows"). Viewers see a "Paused by host" screen and nothing is recorded during that time.
+- **No-filming periods:** the host can pause all cameras (for example during a private or restricted part of the event). Viewers see a "Paused by host" screen and nothing is recorded during that time.
 - **Camera removal:** the host can remove any camera immediately.
 - Event codes are long and random, so links cannot be guessed. LiveKit tokens are issued by the API only, short-lived, and scoped to one room and one role.
 
@@ -378,5 +380,5 @@ Environments: local, staging, production. Each has its own keys in `.env` files 
 - Maximum cameras per event?
 - Do viewers need accounts, or only a display name? (Bans work better with accounts.)
 - How long are recordings and HQ backups kept per plan?
-- Which events to target first (weddings only, or any event)?
+- Which event types to launch and market with first? (The product itself serves all kinds of events.)
 - Domain name.

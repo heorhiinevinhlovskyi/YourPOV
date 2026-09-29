@@ -5,7 +5,7 @@ Read this file and `ARCHITECTURE.md` before making changes.
 
 ## Project
 
-YourPOV is a streaming application built by a small team of friends.
+YourPOV is a multi-camera streaming application for **all kinds of live events** (not only weddings), built by a small team of friends. Keep product wording, examples, and design event-neutral.
 See `ARCHITECTURE.md` for the system design and `DECISIONS.md` for why things are the way they are.
 
 ## Git workflow (REQUIRED)
