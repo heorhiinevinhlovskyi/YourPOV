@@ -160,3 +160,21 @@ Record every significant decision here, newest at the bottom. Never delete an en
 - Decision: By default viewers enter only a display name. The host can turn on "Signed-in viewers only" per event (Google or email magic link via Supabase Auth), before or during the event. Anonymous bans use a browser device ID; bans on signed-in viewers use the account.
 - Alternatives considered: Display name only with no sign-in option (bans easy to get around); mandatory accounts for all viewers (many guests drop off at sign-up).
 - Consequences: Frictionless joining for most events, reliable moderation where the host needs it. Needs a per-event setting, viewer sign-in UI, and bans that store either a device ID or a user ID. MVP can ship display-name only; optional sign-in comes with host accounts in phase 5.
+
+## 017 — Camera limits per plan and a 9-tile grid
+- Date: 2026-09-29
+- Status: Accepted
+- Decided by: Andrii
+- Context: Open question: maximum cameras per event. Each camera adds its own egress, transcoding, and recording cost; more than 9 grid tiles are unreadable on a phone; the host director page becomes hard to manage beyond about 10-16 previews.
+- Decision: Free up to 3 cameras, Paid up to 10, Pro up to 16 (RTMP pro cameras included). The grid shows at most 9 tiles; pinned cameras fill it first, the rest in the host's order. All cameras stay available in single camera view.
+- Alternatives considered: A hard cap of 9 for everyone (too few for big events); no limit (cost grows with every camera and the host cannot manage 25+ cameras).
+- Consequences: Plan limits are checked when a camera joins. The limits are settings and can change once real cost data exists.
+
+## 018 — AI features planned after v1
+- Date: 2026-09-29
+- Status: Accepted
+- Decided by: Andrii
+- Context: Question whether some camera angles could be created or improved by AI.
+- Decision: After v1, add (1) AI virtual cameras that crop close-ups from a wide shot, Pro only, with their own limit outside the physical camera limit; (2) AI picture enhancement of recordings and downloads after the event; (3) an AI director that also scores picture quality, on top of reactions (extends 010). AI-generated viewpoints no camera filmed are not planned.
+- Alternatives considered: Building AI features into v1 (delays the launch and adds GPU cost before the core product is proven); AI-generated new viewpoints (not possible live, visible artifacts).
+- Consequences: Needs a GPU worker for virtual cameras and a quality-scoring step on previews. Details go in ARCHITECTURE.md section 15.

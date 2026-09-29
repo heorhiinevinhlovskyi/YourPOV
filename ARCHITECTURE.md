@@ -134,7 +134,7 @@ Limits to handle: phone storage space, iOS `MediaRecorder` format differences, a
 - **Auto-director:** when turned on, the main feed automatically switches to the camera with the most reactions over a recent window (for example the last 20 seconds), with a minimum time on each camera (for example 15 seconds) to avoid jumpy switching. The host can override at any time.
 - **Camera labels and pins:** the host names cameras ("Stage", "Main entrance", "Crowd"), reorders, pins, or hides them.
 - **Single camera view:** the viewer taps any camera to watch it directly.
-- **Grid view ("security guard" view):** LiveKit RoomComposite egress combines all cameras into one grid video on the server. Viewers download one stream, not N, so it works well on phones. The grid plays the host's audio source (see section 6).
+- **Grid view ("security guard" view):** LiveKit RoomComposite egress combines all cameras into one grid video on the server. Viewers download one stream, not N, so it works well on phones. The grid plays the host's audio source (see section 6). The grid shows **at most 9 tiles (3×3)**, since more are unreadable on a phone. If an event has more than 9 cameras, the host's pinned cameras fill the grid first, then the rest in the host's order; the others are still available in single camera view.
 - **Picture-in-picture:** the main feed large plus a second camera small. Costs the viewer two streams, so the small one uses a low rendition.
 - **Rewind while live:** HLS supports seeking back within the live window, with a "Jump to live" button.
 - **Schedule and countdown:** before going live, viewers see an event page with the schedule and a countdown ("Ceremony starts in 12:30").
@@ -307,7 +307,9 @@ Costs grow mainly with **viewer minutes**, then with cameras, recording, and dow
 
 | | Free | Paid | Pro (videographers) |
 |---|---|---|---|
-| Cameras | 2-3 | More per tier | Many + RTMP pro cameras |
+| Cameras (max per event) | 3 | 10 | 16, including RTMP pro cameras |
+| Grid tiles | Up to 3 | Up to 9 | Up to 9 |
+| AI virtual cameras (after v1) | No | No | Yes, separate limit (for example 2) |
 | Viewers | Small cap (for example 50) | Larger caps up to thousands | Highest caps |
 | Grid, main feed, chat | Yes | Yes | Yes |
 | Recording, replay, highlights | No | Yes | Yes |
@@ -355,6 +357,7 @@ Environments: local, staging, production. Each has its own keys in `.env` files 
 5. **Accounts and paywall:** host accounts, Stripe, plan limits.
 6. **After the event:** recordings, local HQ backup upload, synced replay, highlight reel, guestbook, downloads, analytics.
 7. **Pro tier:** RTMP pro cameras, custom branding.
+8. **AI features (after v1):** see section 15.
 
 ## 15. Not in v1
 
@@ -365,6 +368,18 @@ Environments: local, staging, production. Each has its own keys in `.env` files 
 | Landscape and stability guidance for operators | Not planned |
 | Virtual gifts and tips | Not planned |
 | Native iOS/Android apps | Only if browser limits become a blocker |
+| AI virtual cameras (close-ups cut from a wide shot) | Planned for a later update (Pro) |
+| AI picture enhancement after the event | Planned for a later update |
+| AI director using picture quality | Planned for a later update |
+| AI-generated camera angles nobody filmed | Not planned |
+
+### AI features (after v1)
+
+1. **AI virtual cameras.** One high-resolution camera films a wide shot (a stage, a field, a room). A server-side AI model detects and tracks people (the speaker, the performer, the couple) and crops a second stream from it, such as a close-up. Viewers see it as one more camera in the camera list and grid. It needs a GPU worker per virtual camera for the whole event, so it has its own per-plan limit (Pro only, for example 2) and does not count against the physical camera limit. It only works when the source camera sends enough resolution, so it suits pro cameras and phones on a good connection.
+2. **AI picture enhancement after the event.** Stabilization, low-light noise reduction, and sharpening applied by the media worker to recordings, HQ backups, highlight reels, and downloads. Not applied live, because live enhancement costs too much. Paid and Pro plans.
+3. **AI director using picture quality.** The auto-director (section 5) keeps using reactions, and also scores each camera's low-resolution preview for blur, shake, darkness, and whether faces or the main action are in frame. Cameras that point at the floor or are too dark are skipped when switching the main feed, and the host director page warns about them. Uses the previews the system already receives, so the cost is low.
+
+AI-generated viewpoints that no camera filmed (novel view synthesis) are not planned: they cannot run live, take a long time to compute, and show visible artifacts.
 
 ## 16. Risks
 
@@ -378,7 +393,6 @@ Environments: local, staging, production. Each has its own keys in `.env` files 
 ## 17. Open questions
 
 - Final pricing model: per event, subscription, or both?
-- Maximum cameras per event?
 - How long are recordings and HQ backups kept per plan?
 - Which event types to launch and market with first? (The product itself serves all kinds of events.)
 - Domain name.
