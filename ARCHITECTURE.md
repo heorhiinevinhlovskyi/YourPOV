@@ -434,4 +434,4 @@ AI-generated viewpoints that no camera filmed (novel view synthesis) are not pla
 ## 17. Open questions
 
 - Exact prices for event pass steps and the Pro subscription (set after the first test events show real costs).
-- Domain name.
+- Domain name (postponed). Checked on 2026-09-29: yourpov.com is taken (since 1999); yourpov.app is registered (October 2025, Namecheap; check whether a team member owns it); yourpov.live and yourpovlive.com looked free in the registries.
