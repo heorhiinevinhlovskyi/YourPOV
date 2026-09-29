@@ -1,0 +1,44 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Build output
+dist/
+build/
+.next/
+out/
+coverage/
+
+# Media files (never commit video)
+*.mp4
+*.mov
+*.mkv
+*.m3u8
+# Note: do NOT ignore *.ts here; that would also ignore TypeScript files.
+# Put generated HLS segments in a media/ or segments/ folder instead.
+media/
+segments/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Local Claude settings
+.claude/settings.local.json
