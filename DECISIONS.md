@@ -151,3 +151,12 @@ Record every significant decision here, newest at the bottom. Never delete an en
 - Decision: YourPOV targets all kinds of live events (concerts, sports, conferences, parties, graduations, religious services, weddings, and more). Docs, product wording, examples, and design stay event-neutral.
 - Alternatives considered: A wedding-only product (smaller market; narrower positioning).
 - Consequences: Features and copy must not assume a wedding. Which event types to market first is still an open question.
+
+## 016 — Viewers are anonymous by default; host can require sign-in
+- Date: 2026-09-29
+- Status: Accepted
+- Decided by: Andrii
+- Context: Open question: do viewers need accounts, or only a display name? Bans work better with accounts, but sign-up drives guests away.
+- Decision: By default viewers enter only a display name. The host can turn on "Signed-in viewers only" per event (Google or email magic link via Supabase Auth), before or during the event. Anonymous bans use a browser device ID; bans on signed-in viewers use the account.
+- Alternatives considered: Display name only with no sign-in option (bans easy to get around); mandatory accounts for all viewers (many guests drop off at sign-up).
+- Consequences: Frictionless joining for most events, reliable moderation where the host needs it. Needs a per-event setting, viewer sign-in UI, and bans that store either a device ID or a user ID. MVP can ship display-name only; optional sign-in comes with host accounts in phase 5.

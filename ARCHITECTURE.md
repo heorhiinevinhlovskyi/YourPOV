@@ -232,6 +232,7 @@ event:<eventId>:cam:<camId>  chat and reactions for one camera
 
 - **Moderation:** the host (and optional co-hosts) can delete messages, ban viewers, and turn on slow mode. A profanity filter runs on messages before they are broadcast.
 - **Private events:** optional viewer password or invite-only guest list.
+- **Viewer accounts:** by default viewers only enter a display name, no sign-up. The host can turn on **"Signed-in viewers only"** for an event; viewers then sign in with Google or an email magic link (Supabase Auth). Bans on anonymous viewers are tied to the browser (a device ID in local storage) and are easy to get around; bans on signed-in viewers are tied to the account. The host can switch the setting on during the event if the chat gets out of hand; viewers already watching are asked to sign in to keep chatting.
 - **No-filming periods:** the host can pause all cameras (for example during a private or restricted part of the event). Viewers see a "Paused by host" screen and nothing is recorded during that time.
 - **Camera removal:** the host can remove any camera immediately.
 - Event codes are long and random, so links cannot be guessed. LiveKit tokens are issued by the API only, short-lived, and scoped to one room and one role.
@@ -278,21 +279,21 @@ Peak and total viewers, watch time per camera, most-watched camera, and the most
 ## 11. Backend and data
 
 - **Next.js (TypeScript)** app on **Vercel**: web pages plus API routes.
-- **Supabase**: Postgres database, authentication (hosts need accounts; viewers and camera operators can be anonymous with a display name), Realtime.
+- **Supabase**: Postgres database, authentication (hosts need accounts; viewers and camera operators are anonymous with a display name by default; the host can require viewers to sign in, see section 9), Realtime.
 - **Media worker:** a small background service running FFmpeg jobs (highlight reels, ZIP packages). Vercel functions have time limits, so this runs separately (for example Cloudflare Containers, Fly.io, or Railway). Not needed until Phase 6.
 
 ### Core entities (draft)
 
 | Entity | Key fields |
 |---|---|
-| `users` | id, email, plan |
-| `events` | id, host_id, code, title, status (scheduled/lobby/live/standby/paused/ended), plan_tier, audio_source_camera_id, main_feed_camera_id, auto_director, password_hash, starts_at |
+| `users` | id, email, plan (hosts, and viewers who signed in) |
+| `events` | id, host_id, code, title, status (scheduled/lobby/live/standby/paused/ended), plan_tier, audio_source_camera_id, main_feed_camera_id, auto_director, password_hash, require_viewer_sign_in, starts_at |
 | `event_schedule_items` | id, event_id, title, starts_at |
 | `cameras` | id, event_id, rejoin_key_hash, label, sort_order, pinned, hidden, operator_name, device_type (phone/laptop/pro), status, livekit_participant_id, stream_input_id, hq_backup_key |
 | `camera_health` | camera_id, battery, network_quality, updated_at |
 | `main_feed_log` | event_id, camera_id, switched_at, switched_by (host/auto) |
 | `messages` | id, event_id, camera_id (null = whole event), author_name, body, deleted, created_at |
-| `bans` | event_id, viewer_id, created_at |
+| `bans` | event_id, viewer_id (anonymous device ID), user_id (null if anonymous), created_at |
 | `reaction_counts` | event_id, camera_id, emoji, bucket_second, count |
 | `recordings` | id, event_id, camera_id (null = grid), stream_video_id, started_at, duration (many segments per camera if it reconnects) |
 | `highlights` | id, event_id, camera_id, start_at, end_at, peak_at, included |
@@ -378,7 +379,6 @@ Environments: local, staging, production. Each has its own keys in `.env` files 
 
 - Final pricing model: per event, subscription, or both?
 - Maximum cameras per event?
-- Do viewers need accounts, or only a display name? (Bans work better with accounts.)
 - How long are recordings and HQ backups kept per plan?
 - Which event types to launch and market with first? (The product itself serves all kinds of events.)
 - Domain name.
