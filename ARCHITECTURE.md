@@ -132,7 +132,7 @@ Limits to handle: phone storage space, iOS `MediaRecorder` format differences, a
 - **Auto-director:** when turned on, the main feed automatically switches to the camera with the most reactions over a recent window (for example the last 20 seconds), with a minimum time on each camera (for example 15 seconds) to avoid jumpy switching. The host can override at any time.
 - **Camera labels and pins:** the host names cameras ("Altar", "Dance floor"), reorders, pins, or hides them.
 - **Single camera view:** the viewer taps any camera to watch it directly.
-- **Grid view ("security guard" view):** LiveKit RoomComposite egress combines all cameras into one grid video on the server. Viewers download one stream, not N, so it works well on phones.
+- **Grid view ("security guard" view):** LiveKit RoomComposite egress combines all cameras into one grid video on the server. Viewers download one stream, not N, so it works well on phones. The grid is **silent by default** (see section 6).
 - **Picture-in-picture:** the main feed large plus a second camera small. Costs the viewer two streams, so the small one uses a low rendition.
 - **Rewind while live:** HLS supports seeking back within the live window, with a "Jump to live" button.
 - **Schedule and countdown:** before going live, viewers see an event page with the schedule and a countdown ("Ceremony starts in 12:30").
@@ -142,9 +142,31 @@ Limits to handle: phone storage space, iOS `MediaRecorder` format differences, a
 
 Many microphones cannot play at once.
 
-- In single-camera view, viewers hear that camera's audio by default.
-- The host picks an **audio source** (for example the phone nearest the speakers). It is used for the grid view and the main feed, and optionally for every view.
-- Muted cameras send no audio.
+| View | Audio |
+|---|---|
+| Single camera | That camera's audio |
+| Main feed | The host's audio source |
+| Grid | **Silent by default.** The viewer taps 🔊 on a tile to hear that camera |
+
+### Main feed audio source
+
+- The host picks an **audio source** (for example the phone nearest the speakers).
+- **If the host has not picked one:** use the host's own camera if the host is streaming, otherwise the first camera that joined. The director page shows "Audio: Camera 1 (automatic) · Change".
+- If the audio camera disconnects or mutes, audio moves to the next connected camera.
+- Audio does not follow the main feed automatically, so auto-director switches do not make the sound jump around.
+
+### Grid audio
+
+- The grid composite is produced **without audio**.
+- Every tile has a 🔊 button. Tapping it plays that camera's audio next to the grid video; tapping another tile switches to that one; tapping again mutes. Only one tile can be heard at a time.
+- The tile being heard is highlighted with a 🔊 icon.
+- Tiles of muted cameras show a muted icon and cannot be selected.
+- Implementation: the player loads the chosen camera's stream audio-only (or its lowest video rendition, hidden) alongside the grid.
+- Trade-offs:
+  - Listening to a tile adds a second stream for that viewer, which counts as extra delivered minutes.
+  - The grid and the camera stream are separate, so sound may be up to a second or two out of sync with the small tile. Acceptable for a grid; single-camera view stays in sync.
+
+Muted cameras send no audio in any view.
 
 ## 7. Chat and reactions
 
@@ -282,7 +304,7 @@ Environments: local, staging, production. Each has its own keys in `.env` files 
 
 ### Cost drivers (check current pricing before relying on these)
 
-- Cloudflare Stream: $1 per 1,000 minutes delivered, $5/month per 1,000 minutes stored. MP4 downloads bill like one viewing. Example: 2,000 viewers × 3 h = 360,000 minutes, about $360 per event.
+- Cloudflare Stream: $1 per 1,000 minutes delivered, $5/month per 1,000 minutes stored. MP4 downloads bill like one viewing. Grid viewers listening to a tile use a second stream. Example: 2,000 viewers × 3 h = 360,000 minutes, about $360 per event.
 - LiveKit: WebRTC minutes, bandwidth, and transcode minutes for egress (about cameras + 1 grid × event length), plus ingress for pro cameras.
 - R2: storage for HQ backups (large files; set a retention period per plan).
 - Supabase, Vercel: free tiers during development.

@@ -71,7 +71,7 @@ Record every significant decision here, newest at the bottom. Never delete an en
 - Alternatives considered: LiveKit data messages (only for room participants); Ably or Cloudflare Durable Objects (still options if Supabase Realtime limits are reached).
 - Consequences: One more service to scale, but it is already in the stack.
 
-## 007 — Host-selected audio source
+## 007 — Host-selected audio source (grid part superseded by 013)
 - Date: 2026-09-28
 - Status: Proposed
 - Decided by: George (pending team review)
@@ -124,3 +124,12 @@ Record every significant decision here, newest at the bottom. Never delete an en
 - Decision: The grid is recorded as its own Stream live input. The dashboard requests an MP4 download from Cloudflare Stream for the grid or any camera and gives the host the link. HQ camera backups come from R2. A full ZIP package is built by the media worker.
 - Alternatives considered: Recording the grid separately to R2 with a second egress (extra transcode cost).
 - Consequences: Each download is billed like one viewing, so downloads are limited per plan.
+
+## 013 — Grid is silent by default; viewers choose which tile to hear
+- Date: 2026-09-28
+- Status: Proposed
+- Decided by: George
+- Context: Decision 007 used the host's audio source for the grid. Viewers moving from one camera to the grid should choose what they listen to.
+- Decision: The grid composite has no audio. Each tile has a 🔊 button; the viewer turns on one camera's audio at a time. The host's audio source still applies to the main feed. Default audio source when the host has not picked one: the host's camera if streaming, otherwise the first camera that joined; falls back to the next camera if it disconnects or mutes.
+- Alternatives considered: Host-chosen audio baked into the grid (007; viewer cannot choose); mixing all microphones (noise and echo).
+- Consequences: Supersedes the grid part of 007. Listening to a tile adds a second stream per viewer (extra cost) and may be slightly out of sync with the grid tile.
