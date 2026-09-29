@@ -142,3 +142,12 @@ Record every significant decision here, newest at the bottom. Never delete an en
 - Decision: The event lives in our database, independent of the LiveKit room. A new `standby` state means live with no cameras. All links stay active; viewers see a standby screen with chat still working and reconnect automatically. Cameras rejoin their old slot using a rejoin key stored on the device. Host rights belong to the host's account. Each camera keeps its Stream live input for the whole event; recordings may have several segments per camera. Grid egress stops while empty. The event ends only when the host ends it, or after a long standby with a notification and grace period.
 - Alternatives considered: Ending the event when the LiveKit room closes (viewers would lose the stream and need new links).
 - Consequences: Needs LiveKit webhooks, camera rejoin keys, multi-segment recordings, and an auto-end timer.
+
+## 015 — GitHub repo as the shared project; no Claude Team plan for now
+- Date: 2026-09-28
+- Status: Proposed
+- Decided by: George
+- Context: The team wants to plan and build together with Claude. Sharing a Claude Project requires a Claude Team plan (paid seats, minimum 2, and a business email domain for members). Not everyone has a Claude subscription.
+- Decision: The GitHub repo is the shared project. Everyone contributes through branches and pull requests using their own tools; members with paid Claude plans use their own Claude Code. `CLAUDE.md`, `ARCHITECTURE.md`, and `DECISIONS.md` give every Claude session the same context. The workflow is written in `CONTRIBUTING.md`.
+- Alternatives considered: Claude Team plan with a shared Project (cost, business email domain needed, and chats stay private per member anyway).
+- Consequences: Decisions must be written into the repo, not left in chats. Revisit the Team plan when several members use Claude daily.

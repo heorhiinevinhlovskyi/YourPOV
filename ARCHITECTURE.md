@@ -64,7 +64,7 @@ flowchart LR
     PRO -- RTMP --> IN --> R
     R -- low-res previews + health --> H
     R --> E
-    E -- RTMP --> LI
+    E -- RTMPS --> LI
     LI --> CDN
     LI --> REC
     CDN -- "HLS (5-15 s delay)" --> V
@@ -94,7 +94,7 @@ flowchart LR
 | Delay | Under 1 second | About 5-15 seconds |
 | Why | Two-way, interactive, low delay | Cheap and scalable to very large audiences |
 
-The bridge is **LiveKit egress**: it converts each camera, plus a grid composite, into a stream pushed to a Cloudflare Stream live input.
+The bridge is **LiveKit egress**: it converts each camera, plus a grid composite, into a stream pushed over **RTMPS** (RTMP over TLS, port 443, which is what Cloudflare Stream live inputs accept) to a Cloudflare Stream live input.
 
 During the early spike (Phase 1), viewers can join the LiveKit room directly over WebRTC. The viewer page only swaps its player when moving to HLS; the camera side does not change.
 
@@ -127,7 +127,7 @@ Limits to handle: phone storage space, iOS `MediaRecorder` format differences, a
 
 ## 5. Audience side (delivery)
 
-- Each camera and the grid become one Cloudflare Stream live input. Viewers play them with **hls.js** (native HLS on iOS Safari).
+- Each camera and the grid become one Cloudflare Stream live input (egress pushes to it over RTMPS). Viewers play them with **hls.js** (native HLS on iOS Safari).
 - **Main feed (default view):** the host picks a featured camera. Viewers who have not chosen a camera watch the main feed, which follows the host's choices. The current main feed is broadcast on the event realtime channel, and the viewer player switches source.
 - **Auto-director:** when turned on, the main feed automatically switches to the camera with the most reactions over a recent window (for example the last 20 seconds), with a minimum time on each camera (for example 15 seconds) to avoid jumpy switching. The host can override at any time.
 - **Camera labels and pins:** the host names cameras ("Altar", "Dance floor"), reorders, pins, or hides them.
@@ -209,13 +209,13 @@ Viewers are not in the LiveKit room, so chat runs on a separate real-time servic
 ### Channels
 
 ```
-event:<eventId>              whole-event chat, reactions, main-feed changes
+event:<eventId>              whole-event chat, reactions, main-feed changes, per-camera reaction summary
 event:<eventId>:cam:<camId>  chat and reactions for one camera
 ```
 
 - Viewers subscribe to the event channel plus the channel of the camera they are watching. Switching cameras switches the camera subscription.
 - Comment box toggle: **To everyone** / **To this camera**.
-- Grid view shows the event channel; per-camera reaction counts can float over each tile.
+- Grid view subscribes only to the event channel. The server also publishes a per-second **reaction summary for every camera** on the event channel (for example `{cam-1: ❤️ 12, cam-3: 🎉 40}`), so counts can float over each tile without the viewer subscribing to every camera channel. Grid comments go to the whole event.
 - Camera operators subscribe to their own camera channel and see reactions and comments live, so viewers can direct them.
 - The host sees all channels.
 

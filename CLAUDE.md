@@ -32,7 +32,7 @@ If you are Claude and the current branch is `main`, create a new branch before m
 
 ## Tech stack
 
-Proposed (see `DECISIONS.md` 002-008, pending team review):
+Proposed (see `DECISIONS.md`, pending team review):
 
 - Next.js (TypeScript) on Vercel
 - LiveKit Cloud for camera video (WebRTC)
@@ -40,6 +40,8 @@ Proposed (see `DECISIONS.md` 002-008, pending team review):
 - Supabase for Postgres, auth, and realtime chat/reactions
 - Stripe for payments
 - Playwright for end-to-end tests
+- Cloudflare R2 for file storage (HQ backups, guestbook videos, highlight reels, download packages)
+- Media worker (FFmpeg) for after-event processing
 
 ## Commands
 
