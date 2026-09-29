@@ -187,3 +187,12 @@ Record every significant decision here, newest at the bottom. Never delete an en
 - Decision: Free has no recording. Paid keeps each camera 30 days, and grid, main feed, highlights, guestbook, and chat for 1 year. Pro keeps each camera 1 year, highlights, guestbook, and chat with no time limit, and can buy an archive extension. HQ backups are kept 30 days on Paid and 90 days on Pro. The host gets an email 7 days before any deletion, with a link to the download package.
 - Alternatives considered: One retention period for everything, such as 90 days (the host loses highlights too); keeping everything forever (storage cost grows with every event).
 - Consequences: Needs expiry dates on recordings and files, a daily cleanup job, deletion warning emails, and a main feed recording built before camera recordings expire.
+
+## 020 — Pricing model: event passes and a Pro subscription
+- Date: 2026-09-29
+- Status: Accepted
+- Decided by: Andrii
+- Context: Open question: per event, subscription, or both? Most hosts hold one event (a wedding, a graduation); some hold many (videographers, venues, religious communities, schools, sports clubs). Viewer minutes are the main cost.
+- Decision: Both. Paid is a one-time event pass, priced in steps by viewer cap. Pro is a monthly subscription with an allowance of events or viewer minutes and billed overage. Free stays for trying the product (3 cameras, 50 viewers, no recording). Exact prices are set after the first test events; target about 2-3 times our expected cost.
+- Alternatives considered: Per event only (awkward for regular hosts, no recurring revenue); subscription only (one-off hosts will not subscribe for a single event).
+- Consequences: Needs Stripe one-time payments, Stripe Billing subscriptions, metered overage, and event pass records that set per-event limits.

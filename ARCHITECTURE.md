@@ -316,25 +316,37 @@ Peak and total viewers, watch time per camera, most-watched camera, and the most
 | `highlights` | id, event_id, camera_id, start_at, end_at, peak_at, included |
 | `guestbook_entries` | id, event_id, author_name, video_key, created_at |
 | `viewer_sessions` | event_id, viewer_id, camera_id, started_at, ended_at (for analytics) |
-| `subscriptions` | user_id, stripe_customer_id, tier, status |
+| `subscriptions` | user_id, stripe_customer_id, tier, status, period_start, period_end, included_viewer_minutes, used_viewer_minutes |
+| `event_passes` | id, event_id, user_id, stripe_payment_id, viewer_cap, camera_cap, status |
 
 ## 12. Plans and paywall (draft)
 
 Costs grow mainly with **viewer minutes**, then with cameras, recording, and downloads. Pricing should follow that.
 
-| | Free | Paid | Pro (videographers) |
+| | Free | Paid (event pass) | Pro (subscription) |
 |---|---|---|---|
 | Cameras (max per event) | 3 | 10 | 16, including RTMP pro cameras |
 | Grid tiles | Up to 3 | Up to 9 | Up to 9 |
 | AI virtual cameras (after v1) | No | No | Yes, separate limit (for example 2) |
-| Viewers | Small cap (for example 50) | Larger caps up to thousands | Highest caps |
+| How it is paid | Free | One-time payment per event | Monthly subscription |
+| Viewers | Up to 50 | Pass steps, for example up to 100 / 500 / 2,000 | Monthly allowance of events or viewer minutes, overage billed |
 | Grid, main feed, chat | Yes | Yes | Yes |
 | Recording, replay, highlights | No | Yes | Yes |
 | Downloads | No | Limited | More |
 | Retention | — | Cameras 30 days, grid/main feed/highlights 1 year | Cameras 1 year, highlights no limit, extension available |
 | Custom branding | No | No | Yes |
 
-Payments via **Stripe Checkout** (subscriptions and one-time event passes).
+### Pricing model
+
+Two kinds of hosts pay differently:
+
+- **One-off hosts** (a wedding, a graduation, a birthday) hold an event once in a while. They buy a **Paid event pass** for one event. Pass price steps follow the viewer cap, because viewer minutes are the main cost (a 3-hour event costs roughly $18 in delivery at 100 viewers, $90 at 500, and $360 at 2,000).
+- **Regular hosts** (videographers, venues, religious communities, schools, sports clubs) hold many events. They take a **Pro subscription** with a monthly allowance of events or viewer minutes; usage above it is billed as overage.
+- **Free** is for trying the product: 3 cameras, up to 50 viewers, no recording.
+
+Exact prices are not set yet. Rule of thumb: a pass or plan should cost about **2-3 times our expected cost** for it. Prices are fixed after the first test events show real LiveKit, Cloudflare, and storage costs.
+
+Payments via **Stripe Checkout**: one-time payments for event passes, Stripe Billing for subscriptions, and metered usage for Pro overage.
 
 ## 13. Infrastructure, testing, costs
 
@@ -410,6 +422,6 @@ AI-generated viewpoints that no camera filmed (novel view synthesis) are not pla
 
 ## 17. Open questions
 
-- Final pricing model: per event, subscription, or both?
+- Exact prices for event pass steps and the Pro subscription (set after the first test events show real costs).
 - Which event types to launch and market with first? (The product itself serves all kinds of events.)
 - Domain name.
