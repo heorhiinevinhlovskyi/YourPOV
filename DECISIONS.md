@@ -178,3 +178,12 @@ Record every significant decision here, newest at the bottom. Never delete an en
 - Decision: After v1, add (1) AI virtual cameras that crop close-ups from a wide shot, Pro only, with their own limit outside the physical camera limit; (2) AI picture enhancement of recordings and downloads after the event; (3) an AI director that also scores picture quality, on top of reactions (extends 010). AI-generated viewpoints no camera filmed are not planned.
 - Alternatives considered: Building AI features into v1 (delays the launch and adds GPU cost before the core product is proven); AI-generated new viewpoints (not possible live, visible artifacts).
 - Consequences: Needs a GPU worker for virtual cameras and a quality-scoring step on previews. Details go in ARCHITECTURE.md section 15.
+
+## 019 — Tiered retention for recordings and HQ backups
+- Date: 2026-09-29
+- Status: Accepted
+- Decided by: Andrii
+- Context: Open question: how long recordings and HQ backups are kept per plan. Per-camera recordings in Cloudflare Stream are the main storage cost; HQ backups in R2 are cheap per GB but very large.
+- Decision: Free has no recording. Paid keeps each camera 30 days, and grid, main feed, highlights, guestbook, and chat for 1 year. Pro keeps each camera 1 year, highlights, guestbook, and chat with no time limit, and can buy an archive extension. HQ backups are kept 30 days on Paid and 90 days on Pro. The host gets an email 7 days before any deletion, with a link to the download package.
+- Alternatives considered: One retention period for everything, such as 90 days (the host loses highlights too); keeping everything forever (storage cost grows with every event).
+- Consequences: Needs expiry dates on recordings and files, a daily cleanup job, deletion warning emails, and a main feed recording built before camera recordings expire.

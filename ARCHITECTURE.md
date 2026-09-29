@@ -272,6 +272,23 @@ The host downloads from the event dashboard:
 
 Note: Cloudflare bills each MP4 download like watching the video once, so downloads are limited per plan.
 
+### Retention (how long files are kept)
+
+| What | Free | Paid | Pro |
+|---|---|---|---|
+| Each camera's recording | Not recorded | 30 days | 1 year |
+| Grid and main feed recording | Not recorded | 1 year | 1 year |
+| Highlight reel | — | 1 year | No time limit |
+| HQ local backups (R2) | — | 30 days | 90 days |
+| Guestbook videos, chat log | — | 1 year | No time limit |
+| Archive extension | — | — | Can be bought |
+
+- Deadlines count from the day the event ends.
+- **7 days before anything is deleted**, the host gets an email with a link to download the package (see above), and the event dashboard shows a countdown.
+- A daily cleanup job in the media worker deletes expired Stream videos and R2 files and marks them as deleted in the database. The replay page then only offers what is still kept.
+- The main feed recording is built from the main feed log and the camera recordings before the per-camera recordings expire.
+- Why: per-camera recordings in Cloudflare Stream are the main storage cost (a 3-hour event with 10 cameras and the grid is about 2,000 stored minutes, roughly $10 per month). The long-lived part is the small, valuable part: grid, main feed, highlights.
+
 ### Host analytics
 
 Peak and total viewers, watch time per camera, most-watched camera, and the most-reacted moments (which link into the replay).
@@ -295,7 +312,7 @@ Peak and total viewers, watch time per camera, most-watched camera, and the most
 | `messages` | id, event_id, camera_id (null = whole event), author_name, body, deleted, created_at |
 | `bans` | event_id, viewer_id (anonymous device ID), user_id (null if anonymous), created_at |
 | `reaction_counts` | event_id, camera_id, emoji, bucket_second, count |
-| `recordings` | id, event_id, camera_id (null = grid), stream_video_id, started_at, duration (many segments per camera if it reconnects) |
+| `recordings` | id, event_id, camera_id (null = grid), kind (camera/grid/main_feed), stream_video_id, started_at, duration, expires_at, deleted_at (many segments per camera if it reconnects) |
 | `highlights` | id, event_id, camera_id, start_at, end_at, peak_at, included |
 | `guestbook_entries` | id, event_id, author_name, video_key, created_at |
 | `viewer_sessions` | event_id, viewer_id, camera_id, started_at, ended_at (for analytics) |
@@ -314,6 +331,7 @@ Costs grow mainly with **viewer minutes**, then with cameras, recording, and dow
 | Grid, main feed, chat | Yes | Yes | Yes |
 | Recording, replay, highlights | No | Yes | Yes |
 | Downloads | No | Limited | More |
+| Retention | — | Cameras 30 days, grid/main feed/highlights 1 year | Cameras 1 year, highlights no limit, extension available |
 | Custom branding | No | No | Yes |
 
 Payments via **Stripe Checkout** (subscriptions and one-time event passes).
@@ -345,7 +363,7 @@ Environments: local, staging, production. Each has its own keys in `.env` files 
 
 - Cloudflare Stream: $1 per 1,000 minutes delivered, $5/month per 1,000 minutes stored. MP4 downloads bill like one viewing. Example: 2,000 viewers × 3 h = 360,000 minutes, about $360 per event.
 - LiveKit: WebRTC minutes, bandwidth, and transcode minutes for egress (about cameras + 1 grid × event length), plus ingress for pro cameras.
-- R2: storage for HQ backups (large files; set a retention period per plan).
+- R2: storage for HQ backups (large files, about 3 GB per phone per hour; kept 30 days on Paid, 90 days on Pro, see section 10).
 - Supabase, Vercel: free tiers during development.
 
 ## 14. Delivery phases
@@ -393,6 +411,5 @@ AI-generated viewpoints that no camera filmed (novel view synthesis) are not pla
 ## 17. Open questions
 
 - Final pricing model: per event, subscription, or both?
-- How long are recordings and HQ backups kept per plan?
 - Which event types to launch and market with first? (The product itself serves all kinds of events.)
 - Domain name.
