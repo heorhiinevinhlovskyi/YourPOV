@@ -196,3 +196,12 @@ Record every significant decision here, newest at the bottom. Never delete an en
 - Decision: Both. Paid is a one-time event pass, priced in steps by viewer cap. Pro is a monthly subscription with an allowance of events or viewer minutes and billed overage. Free stays for trying the product (3 cameras, 50 viewers, no recording). Exact prices are set after the first test events; target about 2-3 times our expected cost.
 - Alternatives considered: Per event only (awkward for regular hosts, no recurring revenue); subscription only (one-off hosts will not subscribe for a single event).
 - Consequences: Needs Stripe one-time payments, Stripe Billing subscriptions, metered overage, and event pass records that set per-event limits.
+
+## 021 — Launch focus: family events, sold through videographers
+- Date: 2026-09-29
+- Status: Accepted
+- Decided by: Andrii
+- Context: Open question: which event types to launch and market with first. The product stays event-neutral (015), but a launch needs a focus.
+- Decision: Launch with family events (weddings, christenings, graduations, anniversaries), aimed at relatives abroad who cannot attend. Sell mainly through videographers and event photographers on the Pro subscription, who offer the livestream to their clients. One-off hosts buy event passes.
+- Alternatives considered: Youth sports and school events (filming children needs consent); concerts, clubs, festivals (music rights risk); conferences and religious services (kept for later).
+- Consequences: Both pricing models (020) are used from the start. Pro features for videographers (RTMP cameras, branding) matter early. Marketing and design stay event-neutral in the product itself.

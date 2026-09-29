@@ -10,6 +10,15 @@ _Status: v1 draft (proposed). Reasoning for each choice is in `DECISIONS.md`._
 
 **Idea.** Turn every guest's phone or laptop into a camera for one shared stream. Viewers watch from any browser, switch between cameras, see all cameras at once in a grid, and react to the whole event or to one camera. After the event, the host gets a synced multi-camera replay, an automatic highlight reel, and a download package.
 
+### Launch focus
+
+The product stays event-neutral (see above), but the first launch and marketing focus on:
+
+1. **Family events:** weddings, christenings, graduations, anniversaries. Many guests with phones, and relatives abroad who cannot travel (large diaspora from Romania, Ukraine, Georgia, and Moldova) and want to watch. These hosts buy a Paid event pass.
+2. **Videographers and event photographers as the sales channel.** They take a Pro subscription, connect their own cameras over RTMP next to guests' phones, and offer the livestream to their clients as an extra service. One videographer brings many events a year.
+
+Later: conferences, religious services, and other recurring events. Held back for now: youth sports and school events (filming children needs consent) and concerts (music rights, see section 16).
+
 ### Roles
 
 | Role | Device | What they do |
@@ -419,9 +428,10 @@ AI-generated viewpoints that no camera filmed (novel view synthesis) are not pla
 - Viewer delay (5-15 s) makes live interaction with camera operators feel slower.
 - HQ backup uploads may never finish if operators leave early.
 - Privacy and consent of people being filmed.
+- Filming children (school events, youth sports) needs parental consent; held back from the launch focus.
+- Music rights: streaming live music (concerts, and music played at any event) can break copyright and get streams blocked; concerts are held back from the launch focus.
 
 ## 17. Open questions
 
 - Exact prices for event pass steps and the Pro subscription (set after the first test events show real costs).
-- Which event types to launch and market with first? (The product itself serves all kinds of events.)
 - Domain name.
