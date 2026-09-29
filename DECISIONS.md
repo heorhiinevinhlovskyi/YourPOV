@@ -88,3 +88,39 @@ Record every significant decision here, newest at the bottom. Never delete an en
 - Decision: Next.js (TypeScript) on Vercel, Supabase (Postgres, auth, realtime), Stripe for payments, Cloudflare R2 for any extra file storage, Playwright for end-to-end tests.
 - Alternatives considered: Separate frontend and backend services (more to deploy and learn).
 - Consequences: One codebase and one deployment to start. Can split later if needed.
+
+## 009 — Feature scope for v1
+- Date: 2026-09-28
+- Status: Proposed
+- Decided by: George (pending team review)
+- Context: Brainstorm of additional features beyond the core multi-camera stream.
+- Decision: In v1: main feed, auto-director, camera labels and pins, schedule and countdown, lobby, camera health, local HQ backup recording, zoom and camera flip, picture-in-picture, rewind while live, video guestbook, synced multi-camera replay, automatic highlight reel, download package, moderation, private events, "you're live" indicator and no-filming pause, Pro tier with RTMP pro cameras and branding, host analytics. Later: live captions and translation. Not planned: viewer clip sharing, landscape/stability guidance, virtual gifts.
+- Alternatives considered: A smaller v1. The phases in `ARCHITECTURE.md` keep the build order incremental.
+- Consequences: Adds a media worker (FFmpeg) and R2 storage for after-event features.
+
+## 010 — Auto-director driven by reactions only
+- Date: 2026-09-28
+- Status: Proposed
+- Decided by: George
+- Context: The main feed can switch automatically when the host is busy.
+- Decision: Auto-director switches the main feed to the camera with the most reactions over a recent window, with a minimum time per camera to avoid jumpy switching. The host can override at any time. Audio loudness is not used.
+- Alternatives considered: Switching on audio activity (picks up noise, music, and speeches unevenly).
+- Consequences: Depends on per-camera reaction counts; with few viewers it may not switch much.
+
+## 011 — Highlight reel: 1 minute before to 2 minutes after each reaction spike
+- Date: 2026-09-28
+- Status: Proposed
+- Decided by: George
+- Context: Reactions show which moments mattered. The build-up to a moment matters as much as the moment itself.
+- Decision: For each reaction spike, take a clip from 1 minute before to 2 minutes after. Camera spikes use that camera; event-wide spikes use the main feed camera at that time. Overlapping clips on the same camera merge. Clips are joined in chronological order. The host can remove clips before sharing.
+- Alternatives considered: Fixed short clips around the peak (loses context).
+- Consequences: Needs reaction counts per second, a main-feed log, and a media worker to cut and join clips.
+
+## 012 — Grid and camera downloads through Cloudflare Stream MP4 downloads
+- Date: 2026-09-28
+- Status: Proposed
+- Decided by: George (pending team review)
+- Context: Hosts want to download the grid and individual cameras after the event.
+- Decision: The grid is recorded as its own Stream live input. The dashboard requests an MP4 download from Cloudflare Stream for the grid or any camera and gives the host the link. HQ camera backups come from R2. A full ZIP package is built by the media worker.
+- Alternatives considered: Recording the grid separately to R2 with a second egress (extra transcode cost).
+- Consequences: Each download is billed like one viewing, so downloads are limited per plan.

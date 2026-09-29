@@ -6,21 +6,16 @@ _Status: v1 draft (proposed). Reasoning for each choice is in `DECISIONS.md`._
 
 **Problem.** Event livestreams (weddings, parties, graduations) usually use one phone. Remote viewers miss most of what happens, and nobody can choose what to look at.
 
-**Idea.** Turn every guest's phone or laptop into a camera for one shared stream. Viewers watch from any browser, switch between cameras, see all cameras at once in a grid, and react to the whole event or to one camera.
+**Idea.** Turn every guest's phone or laptop into a camera for one shared stream. Viewers watch from any browser, switch between cameras, see all cameras at once in a grid, and react to the whole event or to one camera. After the event, the host gets a synced multi-camera replay, an automatic highlight reel, and a download package.
 
 ### Roles
 
 | Role | Device | What they do |
 |---|---|---|
-| **Host** | Phone or laptop | Creates the event, shares the QR code, manages cameras (remove, mute, rename), picks the audio source, pays for the plan |
-| **Camera operator** | Phone or laptop browser | Scans the QR code, streams camera + mic, can mute own mic, sees reactions for their own camera |
-| **Viewer** | Any browser | Watches one camera or the grid, switches cameras, chats and reacts to the event or one camera |
-
-### MVP scope
-
-In: event creation, QR join, phone + laptop cameras, mic mute, camera switching, grid view, host audio-source selection, chat and reactions (event-wide and per camera), scale to thousands of viewers, recordings on paid plans.
-
-Out (later): native apps, AI features, pro camera ingest, virtual gifts. See section 12.
+| **Host** | Phone or laptop | Creates the event, shares the QR code, directs the stream (main feed, labels, pins, mute, remove), picks the audio source, moderates, pays |
+| **Camera operator** | Phone or laptop browser | Scans the QR code, streams camera + mic, mutes own mic, zooms and flips camera, sees reactions for their own camera |
+| **Pro camera** (Pro tier) | OBS, GoPro, DSLR via RTMP | Videographer's professional camera joins as a normal camera |
+| **Viewer** | Any browser | Watches the main feed, one camera, or the grid; picture-in-picture; rewinds while live; chats and reacts; leaves a video guestbook message |
 
 ## 2. System diagram
 
@@ -29,29 +24,35 @@ flowchart LR
     subgraph Contributors["Camera side (WebRTC, under 1 second delay)"]
         P["Phone cameras"]
         L["Laptop cameras"]
-        H["Host monitor page"]
+        H["Host director page"]
     end
 
+    PRO["Pro cameras (OBS, GoPro, DSLR)"]
+
     subgraph LK["LiveKit Cloud"]
+        IN["Ingress (RTMP)"]
         R["Event room (SFU)"]
         E["Egress: one stream per camera + grid composite"]
     end
 
-    subgraph CF["Cloudflare Stream"]
-        LI["Live inputs: cam-1, cam-2, ..., grid"]
+    subgraph CF["Cloudflare"]
+        LI["Stream live inputs: cam-1..N, grid"]
         CDN["HLS delivery via CDN"]
-        REC["Recordings (paid plans)"]
+        REC["Stream recordings"]
+        R2[("R2: local HQ backups, guestbook videos, highlight reels, download packages")]
     end
 
     subgraph App["YourPOV app (Next.js on Vercel)"]
-        WEB["Web pages: host, camera, viewer"]
-        API["API: events, join tokens, QR, billing"]
+        WEB["Web pages: host, camera, viewer, replay"]
+        API["API: events, tokens, QR, billing, moderation"]
     end
+
+    W["Media worker (FFmpeg jobs): highlights, zips"]
 
     subgraph Data["Supabase"]
         DB[("Postgres")]
         AUTH["Auth"]
-        RT["Realtime channels: chat + reactions"]
+        RT["Realtime channels: chat, reactions, main feed"]
     end
 
     STRIPE["Stripe"]
@@ -59,7 +60,9 @@ flowchart LR
 
     P -- publish video + audio --> R
     L -- publish video + audio --> R
-    R -- low-res previews --> H
+    P -. HQ local recording upload .-> R2
+    PRO -- RTMP --> IN --> R
+    R -- low-res previews + health --> H
     R --> E
     E -- RTMP --> LI
     LI --> CDN
@@ -74,12 +77,15 @@ flowchart LR
     V <-- event + camera channels --> RT
     P <-- own camera channel --> RT
     H <-- all channels --> RT
+    RT -- reaction counts --> DB
+    DB -- spikes --> W
+    REC --> W
+    R2 --> W
+    W --> R2
     AUTH --> API
 ```
 
 ## 3. Two delivery paths
-
-The system has two separate paths because they have different needs.
 
 | | Camera side | Audience side |
 |---|---|---|
@@ -88,36 +94,56 @@ The system has two separate paths because they have different needs.
 | Delay | Under 1 second | About 5-15 seconds |
 | Why | Two-way, interactive, low delay | Cheap and scalable to very large audiences |
 
-The bridge between them is **LiveKit egress**: it converts each camera, plus a grid composite, into a stream pushed to a Cloudflare Stream live input.
+The bridge is **LiveKit egress**: it converts each camera, plus a grid composite, into a stream pushed to a Cloudflare Stream live input.
 
-During the early spike (Phase 1), viewers can join the LiveKit room directly over WebRTC. The viewer page only swaps its player when moving to HLS in Phase 3; the camera side does not change.
+During the early spike (Phase 1), viewers can join the LiveKit room directly over WebRTC. The viewer page only swaps its player when moving to HLS; the camera side does not change.
 
 ## 4. Camera side (ingest)
 
 - Cameras join from the browser. No app install. Works on phones (iOS Safari, Android Chrome) and laptops.
-- **Join flow:** host shows a QR code, which is a link like `https://<domain>/e/<eventCode>/camera`. The API checks the event and plan limits, then issues a short-lived LiveKit token with the `camera` role.
-- **Device picker:** choose camera and microphone (laptops often have several). Phones can flip front/back.
+- **Join flow:** the host shows a QR code, which is a link like `https://<domain>/e/<eventCode>/camera`. The API checks the event and plan limits, then issues a short-lived LiveKit token with the `camera` role.
+- **Device picker:** choose camera and microphone (laptops often have several).
+- **Zoom and front/back flip** on phones (zoom where the browser supports camera zoom constraints).
 - **Mic mute:** camera operators mute/unmute themselves with a clear on-screen indicator. The host can mute any camera remotely.
-- **Simulcast** is on, so the host monitor receives low-resolution previews of all cameras.
+- **"You're live" indicator** is always visible on camera devices.
+- **Simulcast** is on, so the host director page receives low-resolution previews of all cameras.
+- **Camera health:** each camera reports battery level, network quality, and whether the screen is about to lock. Shown on the host director page with warnings.
 - **Phone reliability:**
   - iOS stops the camera when the screen locks or the browser goes to the background. Use the Wake Lock API and show a "keep this screen open" banner.
-  - Default to 720p to limit battery drain and heat.
+  - Default to 720p for the live stream to limit battery drain and heat.
   - Recommend cellular data over venue Wi-Fi; show a connection-quality indicator.
   - Camera access requires HTTPS.
-- **Camera health** (battery, network quality) is reported to the host monitor.
+- **Pro cameras (Pro tier):** videographers connect OBS, GoPro, or DSLR encoders over RTMP through LiveKit Ingress. They appear as normal cameras.
+
+### Local high-quality backup recording
+
+Venue internet is often poor, so the live stream may be low quality. In parallel:
+
+1. The camera page records locally at full quality with the browser's `MediaRecorder` API.
+2. Chunks upload to R2 in the background when bandwidth allows, and the rest uploads after the event (resumable; the page shows upload progress and asks the operator to keep it open or come back later).
+3. Replays and highlight reels use the HQ file when it exists, falling back to the Stream recording.
+
+Limits to handle: phone storage space, iOS `MediaRecorder` format differences, and operators closing the page before uploading.
 
 ## 5. Audience side (delivery)
 
 - Each camera and the grid become one Cloudflare Stream live input. Viewers play them with **hls.js** (native HLS on iOS Safari).
-- **Switching cameras** means switching which HLS source the player loads.
-- **Grid view ("security guard" view):** LiveKit RoomComposite egress combines all cameras into one grid video on the server. Viewers download one stream, not N, so the grid works well on phones. The grid layout can later be customized with a LiveKit custom template (a web page).
+- **Main feed (default view):** the host picks a featured camera. Viewers who have not chosen a camera watch the main feed, which follows the host's choices. The current main feed is broadcast on the event realtime channel, and the viewer player switches source.
+- **Auto-director:** when turned on, the main feed automatically switches to the camera with the most reactions over a recent window (for example the last 20 seconds), with a minimum time on each camera (for example 15 seconds) to avoid jumpy switching. The host can override at any time.
+- **Camera labels and pins:** the host names cameras ("Altar", "Dance floor"), reorders, pins, or hides them.
+- **Single camera view:** the viewer taps any camera to watch it directly.
+- **Grid view ("security guard" view):** LiveKit RoomComposite egress combines all cameras into one grid video on the server. Viewers download one stream, not N, so it works well on phones.
+- **Picture-in-picture:** the main feed large plus a second camera small. Costs the viewer two streams, so the small one uses a low rendition.
+- **Rewind while live:** HLS supports seeking back within the live window, with a "Jump to live" button.
+- **Schedule and countdown:** before going live, viewers see an event page with the schedule and a countdown ("Ceremony starts in 12:30").
+- **Lobby:** cameras can join before the event goes live to test video and audio. Viewers do not see lobby cameras.
 
 ## 6. Audio
 
 Many microphones cannot play at once.
 
 - In single-camera view, viewers hear that camera's audio by default.
-- The host picks an **audio source** (for example the phone nearest the speakers). It is used for the grid view and optionally as the audio for every camera.
+- The host picks an **audio source** (for example the phone nearest the speakers). It is used for the grid view and the main feed, and optionally for every view.
 - Muted cameras send no audio.
 
 ## 7. Chat and reactions
@@ -127,7 +153,7 @@ Viewers are not in the LiveKit room, so chat runs on a separate real-time servic
 ### Channels
 
 ```
-event:<eventId>              whole-event chat and reactions
+event:<eventId>              whole-event chat, reactions, main-feed changes
 event:<eventId>:cam:<camId>  chat and reactions for one camera
 ```
 
@@ -139,102 +165,162 @@ event:<eventId>:cam:<camId>  chat and reactions for one camera
 
 ### Scale
 
-- Reactions are **batched on the server** into counts per channel per second (for example "❤️ ×240"), not sent one by one.
-- Rate limits per viewer; slow mode for chat when busy.
+- Reactions are **batched on the server** into counts per channel per second (for example "❤️ ×240") and stored in `reaction_counts`. These counts also drive the auto-director and highlight detection.
+- Rate limits per viewer.
 - Viewers are 5-15 s behind the cameras, so operators see reactions to moments from about 10 s ago. The operator UI should make this clear.
 - Chat messages are stored in Postgres so they can appear in replays.
 
-## 8. Backend and data
+## 8. Safety and moderation
+
+- **Moderation:** the host (and optional co-hosts) can delete messages, ban viewers, and turn on slow mode. A profanity filter runs on messages before they are broadcast.
+- **Private events:** optional viewer password or invite-only guest list.
+- **No-filming periods:** the host can pause all cameras (for example "no cameras during the vows"). Viewers see a "Paused by host" screen and nothing is recorded during that time.
+- **Camera removal:** the host can remove any camera immediately.
+- Event codes are long and random, so links cannot be guessed. LiveKit tokens are issued by the API only, short-lived, and scoped to one room and one role.
+
+## 9. After the event
+
+### Synced multi-camera replay
+
+- Every camera, the grid, and main-feed switches are stored with timestamps on a shared event clock.
+- The replay page shows one timeline; viewers switch cameras or grid and stay at the same moment.
+- Chat and reactions replay alongside the video.
+
+### Automatic highlight reel
+
+1. After the event, the media worker scans `reaction_counts` for **spikes**: seconds where reactions are much higher than the recent average.
+2. For each spike, it takes a window from **1 minute before to 2 minutes after** the spike (3 minutes total).
+3. Camera choice: a spike on a camera channel uses that camera. A spike on the event channel uses whatever the main feed showed at that time.
+4. Overlapping windows on the same camera are merged into one clip.
+5. Clips are joined **in chronological order** into one highlight video, stored in R2.
+6. Uses the HQ local backup when available, otherwise the Stream recording (Cloudflare Stream can create clips by start/end time).
+
+The host can review and remove clips before sharing.
+
+### Video guestbook
+
+Remote viewers record a short video message for the host (browser `MediaRecorder`, time-limited), uploaded to R2. The host sees them all after the event.
+
+### Download package (host)
+
+The host downloads from the event dashboard:
+
+- **Grid video:** the grid is recorded as its own Stream live input. The dashboard's "Download grid" button asks Cloudflare Stream to create an MP4 of that recording, waits until it is ready, and gives the host a download link. Audio-only (M4A) is also available.
+- **Each camera:** same flow per camera, using the HQ backup file from R2 when it exists.
+- **Highlight reel** and **guestbook videos** from R2.
+- **Chat log** as a text or CSV file.
+- **Everything at once:** the media worker builds a ZIP in R2 and emails the host a link.
+
+Note: Cloudflare bills each MP4 download like watching the video once, so downloads are limited per plan.
+
+### Host analytics
+
+Peak and total viewers, watch time per camera, most-watched camera, and the most-reacted moments (which link into the replay).
+
+## 10. Backend and data
 
 - **Next.js (TypeScript)** app on **Vercel**: web pages plus API routes.
 - **Supabase**: Postgres database, authentication (hosts need accounts; viewers and camera operators can be anonymous with a display name), Realtime.
+- **Media worker:** a small background service running FFmpeg jobs (highlight reels, ZIP packages). Vercel functions have time limits, so this runs separately (for example Cloudflare Containers, Fly.io, or Railway). Not needed until Phase 6.
 
 ### Core entities (draft)
 
 | Entity | Key fields |
 |---|---|
 | `users` | id, email, plan |
-| `events` | id, host_id, code, title, status (scheduled/live/ended), plan_tier, audio_source_camera_id, starts_at |
-| `cameras` | id, event_id, label, operator_name, device_type (phone/laptop), status, livekit_participant_id, stream_input_id |
-| `messages` | id, event_id, camera_id (null = whole event), author_name, body, created_at |
+| `events` | id, host_id, code, title, status (scheduled/lobby/live/paused/ended), plan_tier, audio_source_camera_id, main_feed_camera_id, auto_director, password_hash, starts_at |
+| `event_schedule_items` | id, event_id, title, starts_at |
+| `cameras` | id, event_id, label, sort_order, pinned, hidden, operator_name, device_type (phone/laptop/pro), status, livekit_participant_id, stream_input_id, hq_backup_key |
+| `camera_health` | camera_id, battery, network_quality, updated_at |
+| `main_feed_log` | event_id, camera_id, switched_at, switched_by (host/auto) |
+| `messages` | id, event_id, camera_id (null = whole event), author_name, body, deleted, created_at |
+| `bans` | event_id, viewer_id, created_at |
 | `reaction_counts` | event_id, camera_id, emoji, bucket_second, count |
-| `recordings` | id, event_id, camera_id (null = grid), stream_video_id, duration |
+| `recordings` | id, event_id, camera_id (null = grid), stream_video_id, started_at, duration |
+| `highlights` | id, event_id, camera_id, start_at, end_at, peak_at, included |
+| `guestbook_entries` | id, event_id, author_name, video_key, created_at |
+| `viewer_sessions` | event_id, viewer_id, camera_id, started_at, ended_at (for analytics) |
 | `subscriptions` | user_id, stripe_customer_id, tier, status |
 
-### Security
+## 11. Plans and paywall (draft)
 
-- Event codes are long and random so links cannot be guessed.
-- LiveKit tokens are issued by the API only, short-lived, and scoped to one room and one role.
-- The host can remove cameras and delete messages or ban viewers.
-- Optional viewer password for private events.
+Costs grow mainly with **viewer minutes**, then with cameras, recording, and downloads. Pricing should follow that.
 
-## 9. Plans and paywall (draft)
-
-Costs grow mainly with **viewer minutes**, then with cameras and recording. Pricing should follow that.
-
-| | Free | Paid tiers (per event or subscription) |
-|---|---|---|
-| Cameras | 2-3 | More cameras per tier |
-| Viewers | Small cap (for example 50) | Larger caps up to thousands |
-| Grid view | Yes | Yes |
-| Recording / replay | No | Yes, per camera + grid |
+| | Free | Paid | Pro (videographers) |
+|---|---|---|---|
+| Cameras | 2-3 | More per tier | Many + RTMP pro cameras |
+| Viewers | Small cap (for example 50) | Larger caps up to thousands | Highest caps |
+| Grid, main feed, chat | Yes | Yes | Yes |
+| Recording, replay, highlights | No | Yes | Yes |
+| Downloads | No | Limited | More |
+| Custom branding | No | No | Yes |
 
 Payments via **Stripe Checkout** (subscriptions and one-time event passes).
 
-## 10. Recording and replay
-
-- Cloudflare Stream records each live input automatically (billed as minutes stored). Recording is only enabled on paid plans.
-- Store a start timestamp for every camera so replays can be synced and viewers can switch cameras in the replay.
-
-## 11. Infrastructure, testing, costs
+## 12. Infrastructure, testing, costs
 
 ### Services
 
 | Need | Service |
 |---|---|
 | Web app + API | Vercel |
-| Camera side (WebRTC) | LiveKit Cloud |
-| Audience delivery + recording | Cloudflare Stream |
+| Camera side (WebRTC), pro camera ingress, egress | LiveKit Cloud |
+| Audience delivery, recording, clips, MP4 downloads | Cloudflare Stream |
+| HQ backups, guestbook, highlights, packages | Cloudflare R2 |
+| Media processing | Media worker (FFmpeg) |
 | Database, auth, realtime | Supabase |
 | Payments | Stripe |
-| Extra file storage (if needed) | Cloudflare R2 |
 
 Environments: local, staging, production. Each has its own keys in `.env` files (never committed).
 
 ### Testing
 
-- **Unit tests** for API logic (token issuing, plan limits).
-- **Playwright end-to-end tests** with Chrome's fake camera (`--use-fake-device-for-media-stream`, `--use-fake-ui-for-media-stream`): open several camera pages and viewer pages at once, then check that switching cameras, grid view, mute, and per-camera chat work.
+- **Unit tests** for API logic (token issuing, plan limits, spike detection, clip window merging, auto-director switching rules).
+- **Playwright end-to-end tests** with Chrome's fake camera (`--use-fake-device-for-media-stream`, `--use-fake-ui-for-media-stream`): open several camera pages and viewer pages at once, then check camera switching, main feed, grid, mute, per-camera chat, and moderation.
 - **Manual device matrix** before each release: iPhone Safari, Android Chrome, macOS/Windows laptop, on Wi-Fi and cellular.
 - GitHub Actions runs lint and tests on every PR.
 
 ### Cost drivers (check current pricing before relying on these)
 
-- Cloudflare Stream: $1 per 1,000 minutes delivered, $5/month per 1,000 minutes stored. Example: 2,000 viewers × 3 h = 360,000 minutes, about $360 per event.
-- LiveKit: WebRTC minutes, bandwidth, and transcode minutes for egress (about cameras + 1 grid × event length). Free plan covers development only.
+- Cloudflare Stream: $1 per 1,000 minutes delivered, $5/month per 1,000 minutes stored. MP4 downloads bill like one viewing. Example: 2,000 viewers × 3 h = 360,000 minutes, about $360 per event.
+- LiveKit: WebRTC minutes, bandwidth, and transcode minutes for egress (about cameras + 1 grid × event length), plus ingress for pro cameras.
+- R2: storage for HQ backups (large files; set a retention period per plan).
 - Supabase, Vercel: free tiers during development.
 
-## 12. Delivery phases
+## 13. Delivery phases
 
 1. **Spike:** a phone and a laptop publish into a LiveKit room; one watch page (WebRTC); mic mute. Prove it on real devices over cellular.
-2. **Multi-camera event:** create event, QR join, device picker, host monitor, remote mute, camera labels, audio-source picker.
-3. **Scale path:** egress to Cloudflare Stream, grid composite, HLS viewer page with camera switching and grid.
-4. **Chat and reactions:** Supabase Realtime channels (event + per camera), batching, basic moderation.
+2. **Multi-camera event:** create event, QR join, device picker, zoom/flip, host director page with camera health, labels, pins, remote mute, audio source, main feed, lobby.
+3. **Scale path:** egress to Cloudflare Stream, grid composite, HLS viewer page with main feed, camera switching, grid, picture-in-picture, rewind while live, schedule and countdown.
+4. **Chat, reactions, moderation:** realtime channels, batching, auto-director, moderation tools, private events, no-filming pause.
 5. **Accounts and paywall:** host accounts, Stripe, plan limits.
-6. **Recording and replay:** paid-plan recordings, synced multi-camera replay.
+6. **After the event:** recordings, local HQ backup upload, synced replay, highlight reel, guestbook, downloads, analytics.
+7. **Pro tier:** RTMP pro cameras, custom branding.
 
-## 13. Risks
+## 14. Not in v1
 
-- iOS browser limitations (screen lock, background tabs, battery, heat).
+| Feature | Status |
+|---|---|
+| Live captions and translation | Planned for a later update |
+| Clip sharing by viewers ("save last 30 s") | Not planned |
+| Landscape and stability guidance for operators | Not planned |
+| Virtual gifts and tips | Not planned |
+| Native iOS/Android apps | Only if browser limits become a blocker |
+
+## 15. Risks
+
+- iOS browser limitations (screen lock, background tabs, battery, heat, `MediaRecorder` differences).
 - Poor venue connectivity for camera phones.
-- Egress and delivery costs at large audiences; pricing must cover them.
+- Egress, delivery, and download costs at large audiences; pricing must cover them.
 - Viewer delay (5-15 s) makes live interaction with camera operators feel slower.
+- HQ backup uploads may never finish if operators leave early.
 - Privacy and consent of people being filmed.
 
-## 14. Open questions
+## 16. Open questions
 
 - Final pricing model: per event, subscription, or both?
 - Maximum cameras per event?
-- Do viewers need accounts, or only a display name?
+- Do viewers need accounts, or only a display name? (Bans work better with accounts.)
+- How long are recordings and HQ backups kept per plan?
 - Which events to target first (weddings only, or any event)?
 - Domain name.
