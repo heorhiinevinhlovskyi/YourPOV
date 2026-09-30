@@ -205,3 +205,12 @@ Record every significant decision here, newest at the bottom. Never delete an en
 - Decision: Launch with family events (weddings, christenings, graduations, anniversaries), aimed at relatives abroad who cannot attend. Sell mainly through videographers and event photographers on the Pro subscription, who offer the livestream to their clients. One-off hosts buy event passes.
 - Alternatives considered: Youth sports and school events (filming children needs consent); concerts, clubs, festivals (music rights risk); conferences and religious services (kept for later).
 - Consequences: Both pricing models (020) are used from the start. Pro features for videographers (RTMP cameras, branding) matter early. Marketing and design stay event-neutral in the product itself.
+
+## 022 — Written codebase rules and one owner per piece of state
+- Date: 2026-09-29
+- Status: Proposed
+- Decided by: George (pending team review)
+- Context: Before any code is written, a small team (and Claude Code) needs shared rules so the code stays consistent. The design has several services (Postgres, LiveKit, Cloudflare Stream, R2, Stripe, Realtime), and it must be clear which one owns which data and who is allowed to change shared state.
+- Decision: Add `CODEBASE_RULES.md` with rules for state ownership, authority, TypeScript, errors, logging, security, payments, UI, testing, and pull requests, adapted from the practices of a larger TypeScript codebase. Postgres owns event state; LiveKit and Realtime messages are not the source of truth. The API decides shared state; the host sends commands; each page changes only its own device or view. `CLAUDE.md` links to it and summarizes the key rules.
+- Alternatives considered: Writing rules later, once code exists (habits form in the first PRs and are hard to change); relying on linters only (they cannot enforce ownership, authority, or security rules).
+- Consequences: Reviewers can point to a written rule instead of personal preference. The rules must be kept up to date in the same PR when they change.

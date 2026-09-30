@@ -1,7 +1,7 @@
 # CLAUDE.md — YourPOV
 
 Instructions for Claude Code (and humans) working in this repository.
-Read this file and `ARCHITECTURE.md` before making changes.
+Read this file, `ARCHITECTURE.md`, and `CODEBASE_RULES.md` before making changes.
 
 ## Project
 
@@ -45,8 +45,25 @@ Proposed (see `DECISIONS.md`, pending team review):
 
 ## Commands
 
-_TBD — how to install, run, test, and lint._
+The app is not scaffolded yet. When it is, list the real commands here. Planned shape:
+
+- One command to install, one to run locally, one to run unit tests, one to run Playwright tests.
+- One `check` command that runs lint (zero warnings allowed), format check, typecheck, and unit tests. Run it before every PR.
+- GitHub Actions runs the same `check` on every PR, so passing locally means passing in CI.
+- Pin one Node.js version and one TypeScript version for the whole team.
 
 ## Code conventions
 
-_TBD — language style, folder structure, naming, testing expectations._
+Full rules are in `CODEBASE_RULES.md`. The most important ones:
+
+- **One owner per piece of state.** Postgres owns events, cameras, and settings. LiveKit and Realtime messages are not the source of truth. Never keep a second copy that can drift.
+- **The API decides shared things** (event status, main feed, audio source, limits, bans). Clients send requests; the host sends commands; each page only changes its own device or view.
+- **Never trust the client** for identity, role, plan, or billing.
+- **Parse all outside input with a schema** where it enters (requests, webhooks, Realtime messages). No `any`, no casting through `unknown`.
+- **Named constants** for limits, timeouts, and windows. Plan limits in one typed config.
+- **Fail loudly on broken invariants**; show a safe message for normal failures; never log secrets or full payloads.
+- **Webhooks** verify the signature and are idempotent.
+- **Supabase RLS on every table**, deny by default. Service role key and all provider secrets stay server-only.
+- **UI shows state and sends intent**; no business logic in components. Reuse shared components and design tokens.
+- **Tests check behavior**, not trivial plumbing. New logic ships with its test.
+- **Simplest solution that works**, small PRs, one intent per commit.

@@ -308,6 +308,31 @@ Peak and total viewers, watch time per camera, most-watched camera, and the most
 - **Supabase**: Postgres database, authentication (hosts need accounts; viewers and camera operators are anonymous with a display name by default; the host can require viewers to sign in, see section 9), Realtime.
 - **Media worker:** a small background service running FFmpeg jobs (highlight reels, ZIP packages). Vercel functions have time limits, so this runs separately (for example Cloudflare Containers, Fly.io, or Railway). Not needed until Phase 6.
 
+### Sources of truth
+
+Each kind of data has one owner. Everything else reads from it. Rules for code are in `CODEBASE_RULES.md` sections 1-3.
+
+| Data | Owner |
+|---|---|
+| Events, cameras, settings, main feed, audio source, bans, messages, recordings list | Postgres |
+| Who is connected and publishing right now | LiveKit, reported by webhooks and stored in Postgres |
+| Live and recorded video | Cloudflare Stream (Postgres stores IDs and timestamps) |
+| Large files | R2 (Postgres stores object keys) |
+| Payments | Stripe, mirrored into `subscriptions` and `event_passes` by webhooks |
+
+Realtime channel messages are notifications, not state. A viewer who joins late loads the current main feed, audio source, and event status from the database, then listens for changes.
+
+### Who decides
+
+| Decision | Made by |
+|---|---|
+| Event status, plan limits, main feed, audio source, auto-director switches, bans, reaction counts | API (server) |
+| Mute or remove a camera, pause filming, pick main feed or audio source | Host sends a command; the API checks the host owns the event, saves the change, then broadcasts it |
+| Camera, mic, zoom, flip, local recording on a device | That camera page |
+| Which camera a viewer watches, volume, picture-in-picture | That viewer page |
+
+The server never trusts identity, role, or plan sent by a client. It reads them from the Supabase session, the LiveKit token, or the camera's rejoin key.
+
 ### Core entities (draft)
 
 | Entity | Key fields |
@@ -379,6 +404,7 @@ Environments: local, staging, production. Each has its own keys in `.env` files 
 - **Playwright end-to-end tests** with Chrome's fake camera (`--use-fake-device-for-media-stream`, `--use-fake-ui-for-media-stream`): open several camera pages and viewer pages at once, then check camera switching, main feed, grid, mute, per-camera chat, and moderation.
 - **Manual device matrix** before each release: iPhone Safari, Android Chrome, macOS/Windows laptop, on Wi-Fi and cellular.
 - GitHub Actions runs lint and tests on every PR.
+- What to test and how is in `CODEBASE_RULES.md` section 12.
 
 ### Cost drivers (check current pricing before relying on these)
 
