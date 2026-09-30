@@ -10,17 +10,23 @@ One live occasion with one host, a set of cameras, and viewers. It lives in our 
 
 ## Camera
 
-One video source in an event: a guest's phone or laptop, or a pro camera. A camera keeps its label, chat channel, and Stream live input for the whole event, even across reconnects. Code: `cameras`.
+A device that streams video into an event: a guest's phone or laptop, or a pro camera. A camera connects to a camera slot; when it disconnects, the slot stays and the camera can reconnect to it.
 
 Avoid: _stream_ (an event has many streams), _participant_ (a LiveKit term).
 
+## Camera slot
+
+The place in an event that a camera connects to. The slot, not the device, owns the label, position, pin, chat channel, Stream live input, and recording timeline, so they survive disconnects. A slot has at most one camera connected at a time. Code: `cameras` table (one row per camera slot).
+
+Avoid: _seat_, _port_.
+
 ## Camera operator
 
-The person holding a camera device. A camera operator has no account; the rejoin key on their device connects them back to the same camera.
+The person holding a camera. A camera operator has no account; the rejoin key on their device reconnects it to the same camera slot.
 
 ## Rejoin key
 
-A random key stored in the camera device's browser that reclaims the same camera after a disconnect. Only its hash is stored. Opening the camera link on a new device creates a new camera instead.
+A random key stored in the camera's browser that reconnects it to its camera slot after a disconnect. Only its hash is stored. Opening the camera link on a new device creates a new camera slot instead.
 
 ## Pro camera
 
@@ -60,9 +66,15 @@ The full-quality local recording a camera page makes with `MediaRecorder` and up
 
 Avoid: _local recording_ when you mean the uploaded file.
 
+## Plan
+
+What a host can do in an event: **Free**, **Event pass**, or **Pro**. Code: `plan_tier` values `free`, `event_pass`, `pro`.
+
 ## Event pass
 
-A one-time payment that unlocks the Paid plan for one event, priced by viewer cap. Code: `event_passes`.
+The paid plan for one event, bought with a one-time payment. It allows more cameras and more viewers than Free, plus recording; the price steps follow the viewer cap. Code: plan tier `event_pass`; purchases in `event_passes`.
+
+Avoid: _Paid plan_, _Paid_.
 
 ## Viewer minutes
 

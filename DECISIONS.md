@@ -214,3 +214,12 @@ Record every significant decision here, newest at the bottom. Never delete an en
 - Decision: Add `CODEBASE_RULES.md` with rules for state ownership, authority, TypeScript, errors, logging, security, payments, UI, testing, and pull requests, adapted from the practices of a larger TypeScript codebase. Postgres owns event state; LiveKit and Realtime messages are not the source of truth. The API decides shared state; the host sends commands; each page changes only its own device or view. `CLAUDE.md` links to it and summarizes the key rules.
 - Alternatives considered: Writing rules later, once code exists (habits form in the first PRs and are hard to change); relying on linters only (they cannot enforce ownership, authority, or security rules).
 - Consequences: Reviewers can point to a written rule instead of personal preference. The rules must be kept up to date in the same PR when they change.
+
+## 023 — Naming: "Event pass" plan, and camera vs camera slot
+- Date: 2026-09-29
+- Status: Accepted
+- Decided by: George
+- Context: Docs used "Paid" as the name of the one-event plan and "event pass" as the way to buy it. "Camera" meant both the streaming device and its place in the event, which blurs what survives a disconnect.
+- Decision: The one-event plan is called **Event pass** (plan tier `event_pass`); "Paid" is no longer a plan name. Earlier entries (017, 019, 020) that say "Paid" mean Event pass. A **camera** is the device that streams video. A **camera slot** is the place in the event that a camera connects to; it owns the label, position, chat channel, Stream live input, and recording timeline, and a camera reconnects to it with its rejoin key. Definitions are in `GLOSSARY.md`.
+- Alternatives considered: Keeping "Paid" (vague once Pro is also paid); using "camera" for both meanings (unclear which data survives a disconnect).
+- Consequences: UI copy, code, and plan config use `event_pass`. The `cameras` table stores camera slots; whether to rename it to `camera_slots` is decided when the schema is written.

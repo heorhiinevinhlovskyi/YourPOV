@@ -14,7 +14,7 @@ _Status: v1 draft (proposed). Reasoning for each choice is in `DECISIONS.md`._
 
 The product stays event-neutral (see above), but the first launch and marketing focus on:
 
-1. **Family events:** weddings, christenings, graduations, anniversaries. Many guests with phones, and relatives abroad who cannot travel (large diaspora from Romania, Ukraine, Georgia, and Moldova) and want to watch. These hosts buy a Paid event pass.
+1. **Family events:** weddings, christenings, graduations, anniversaries. Many guests with phones, and relatives abroad who cannot travel (large diaspora from Romania, Ukraine, Georgia, and Moldova) and want to watch. These hosts buy an Event pass.
 2. **Videographers and event photographers as the sales channel.** They take a Pro subscription, connect their own cameras over RTMP next to guests' phones, and offer the livestream to their clients as an extra service. One videographer brings many events a year.
 
 Later: conferences, religious services, and other recurring events. Held back for now: youth sports and school events (filming children needs consent) and concerts (music rights, see section 16).
@@ -197,8 +197,8 @@ scheduled -> lobby -> live <-> standby
 
 ### Rejoining
 
-- **Same camera slot:** each camera device stores a rejoin key in the browser. Reopening the same link on the same device reclaims the same camera: same label, same chat channel, same Stream live input, and recordings continue on that camera's timeline.
-- **New device:** joins as a new camera.
+- **Same camera slot:** a camera slot is the place in the event that a camera connects to. It keeps the label, position, chat channel, Stream live input, and recording timeline while no device is connected. Each camera stores a rejoin key in the browser; reopening the same link on the same device reconnects it to its camera slot, and recordings continue on that slot's timeline.
+- **New device:** gets a new camera slot.
 - **Host:** host rights belong to the host's account, not to a device or a camera. If the host's phone dies, the host signs in on another device and opens the director page. The host's camera can drop without affecting host controls.
 
 ### Behind the scenes
@@ -283,7 +283,7 @@ Note: Cloudflare bills each MP4 download like watching the video once, so downlo
 
 ### Retention (how long files are kept)
 
-| What | Free | Paid | Pro |
+| What | Free | Event pass | Pro |
 |---|---|---|---|
 | Each camera's recording | Not recorded | 30 days | 1 year |
 | Grid and main feed recording | Not recorded | 1 year | 1 year |
@@ -357,7 +357,7 @@ The server never trusts identity, role, or plan sent by a client. It reads them 
 
 Costs grow mainly with **viewer minutes**, then with cameras, recording, and downloads. Pricing should follow that.
 
-| | Free | Paid (event pass) | Pro (subscription) |
+| | Free | Event pass | Pro (subscription) |
 |---|---|---|---|
 | Cameras (max per event) | 3 | 10 | 16, including RTMP pro cameras |
 | Grid tiles | Up to 3 | Up to 9 | Up to 9 |
@@ -374,7 +374,7 @@ Costs grow mainly with **viewer minutes**, then with cameras, recording, and dow
 
 Two kinds of hosts pay differently:
 
-- **One-off hosts** (a wedding, a graduation, a birthday) hold an event once in a while. They buy a **Paid event pass** for one event. Pass price steps follow the viewer cap, because viewer minutes are the main cost (a 3-hour event costs roughly $18 in delivery at 100 viewers, $90 at 500, and $360 at 2,000).
+- **One-off hosts** (a wedding, a graduation, a birthday) hold an event once in a while. They buy an **Event pass** for one event. Pass price steps follow the viewer cap, because viewer minutes are the main cost (a 3-hour event costs roughly $18 in delivery at 100 viewers, $90 at 500, and $360 at 2,000).
 - **Regular hosts** (videographers, venues, religious communities, schools, sports clubs) hold many events. They take a **Pro subscription** with a monthly allowance of events or viewer minutes; usage above it is billed as overage.
 - **Free** is for trying the product: 3 cameras, up to 50 viewers, no recording.
 
@@ -410,7 +410,7 @@ Environments: local, staging, production. Each has its own keys in `.env` files 
 
 - Cloudflare Stream: $1 per 1,000 minutes delivered, $5/month per 1,000 minutes stored. MP4 downloads bill like one viewing. Example: 2,000 viewers × 3 h = 360,000 minutes, about $360 per event.
 - LiveKit: WebRTC minutes, bandwidth, and transcode minutes for egress (about cameras + 1 grid × event length), plus ingress for pro cameras.
-- R2: storage for HQ backups (large files, about 3 GB per phone per hour; kept 30 days on Paid, 90 days on Pro, see section 10).
+- R2: storage for HQ backups (large files, about 3 GB per phone per hour; kept 30 days on Event pass, 90 days on Pro, see section 10).
 - Supabase, Vercel: free tiers during development.
 
 ## 14. Delivery phases
@@ -441,7 +441,7 @@ Environments: local, staging, production. Each has its own keys in `.env` files 
 ### AI features (after v1)
 
 1. **AI virtual cameras.** One high-resolution camera films a wide shot (a stage, a field, a room). A server-side AI model detects and tracks people (the speaker, the performer, the couple) and crops a second stream from it, such as a close-up. Viewers see it as one more camera in the camera list and grid. It needs a GPU worker per virtual camera for the whole event, so it has its own per-plan limit (Pro only, for example 2) and does not count against the physical camera limit. It only works when the source camera sends enough resolution, so it suits pro cameras and phones on a good connection.
-2. **AI picture enhancement after the event.** Stabilization, low-light noise reduction, and sharpening applied by the media worker to recordings, HQ backups, highlight reels, and downloads. Not applied live, because live enhancement costs too much. Paid and Pro plans.
+2. **AI picture enhancement after the event.** Stabilization, low-light noise reduction, and sharpening applied by the media worker to recordings, HQ backups, highlight reels, and downloads. Not applied live, because live enhancement costs too much. Event pass and Pro plans.
 3. **AI director using picture quality.** The auto-director (section 5) keeps using reactions, and also scores each camera's low-resolution preview for blur, shake, darkness, and whether faces or the main action are in frame. Cameras that point at the floor or are too dark are skipped when switching the main feed, and the host director page warns about them. Uses the previews the system already receives, so the cost is low.
 
 AI-generated viewpoints that no camera filmed (novel view synthesis) are not planned: they cannot run live, take a long time to compute, and show visible artifacts.
