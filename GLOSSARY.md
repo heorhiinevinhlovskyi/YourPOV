@@ -10,23 +10,23 @@ One live occasion with one host, a set of cameras, and viewers. It lives in our 
 
 ## Camera
 
-A device that streams video into an event: a guest's phone or laptop, or a pro camera. A camera connects to a camera slot; when it disconnects, the slot stays and the camera can reconnect to it.
+One video source in an event: a guest's phone or laptop, or a pro camera. A camera keeps its label, chat channel, and Stream live input for the whole event, even across reconnects. Code: `cameras`.
 
 Avoid: _stream_ (an event has many streams), _participant_ (a LiveKit term).
 
 ## Camera slot
 
-The place in an event that a camera connects to. The slot, not the device, owns the label, position, pin, chat channel, Stream live input, and recording timeline, so they survive disconnects. A slot has at most one camera connected at a time. Code: `cameras` table (one row per camera slot).
+One window in the grid, showing one camera. The grid has up to 9 camera slots; pinned cameras fill them first, then the rest in the host's order.
 
-Avoid: _seat_, _port_.
+Avoid: _tile_, _cell_.
 
 ## Camera operator
 
-The person holding a camera. A camera operator has no account; the rejoin key on their device reconnects it to the same camera slot.
+The person holding a camera device. A camera operator has no account; the rejoin key on their device connects them back to the same camera.
 
 ## Rejoin key
 
-A random key stored in the camera's browser that reconnects it to its camera slot after a disconnect. Only its hash is stored. Opening the camera link on a new device creates a new camera slot instead.
+A random key stored in the camera device's browser that reclaims the same camera after a disconnect. Only its hash is stored. Opening the camera link on a new device creates a new camera instead.
 
 ## Pro camera
 
@@ -44,7 +44,7 @@ A host setting that switches the main feed to the camera with the most reactions
 
 ## Grid
 
-One server-side composite video of up to 9 cameras, played as a single stream. It plays the audio source's sound. It is not a set of separate players.
+One server-side composite video of up to 9 camera slots, played as a single stream. It plays the audio source's sound. It is not a set of separate players.
 
 Avoid: _multiview_, _security view_ (fine in marketing copy, not in code or docs).
 

@@ -127,7 +127,7 @@ Keep them separate. They are not interchangeable.
 - Tests SHOULD NOT check trivial things (a constructor sets a field, a constant exists). If a test would still pass after replacing the code with a hardcoded value, rewrite or remove it.
 - Mock only external services (LiveKit, Cloudflare, Stripe, time). Keep our own logic real.
 - Playwright:
-  - use role and label locators; use `data-testid` only for video tiles and other elements without an accessible role,
+  - use role and label locators; use `data-testid` only for grid camera slots, video players, and other elements without an accessible role,
   - start `waitForResponse` before the click that triggers the request,
   - wait with `expect(...)` or `expect.poll`, not fixed sleeps,
   - use separate browser contexts for host, camera, and viewer in the same test,

@@ -217,9 +217,18 @@ Record every significant decision here, newest at the bottom. Never delete an en
 
 ## 023 — Naming: "Event pass" plan, and camera vs camera slot
 - Date: 2026-09-29
-- Status: Accepted
+- Status: Accepted (camera and camera slot part superseded by 024)
 - Decided by: George
 - Context: Docs used "Paid" as the name of the one-event plan and "event pass" as the way to buy it. "Camera" meant both the streaming device and its place in the event, which blurs what survives a disconnect.
 - Decision: The one-event plan is called **Event pass** (plan tier `event_pass`); "Paid" is no longer a plan name. Earlier entries (017, 019, 020) that say "Paid" mean Event pass. A **camera** is the device that streams video. A **camera slot** is the place in the event that a camera connects to; it owns the label, position, chat channel, Stream live input, and recording timeline, and a camera reconnects to it with its rejoin key. Definitions are in `GLOSSARY.md`.
 - Alternatives considered: Keeping "Paid" (vague once Pro is also paid); using "camera" for both meanings (unclear which data survives a disconnect).
 - Consequences: UI copy, code, and plan config use `event_pass`. The `cameras` table stores camera slots; whether to rename it to `camera_slots` is decided when the schema is written.
+
+## 024 — A camera slot is a window in the grid
+- Date: 2026-09-29
+- Status: Accepted
+- Decided by: George
+- Context: Decision 023 defined a camera slot as the place a camera reconnects to. That made the `cameras` table a table of slots and split one concept into two.
+- Decision: A **camera** is one video source in an event (phone, laptop, or pro camera). It keeps its label, chat channel, and Stream live input for the whole event, and reconnects with its rejoin key. A **camera slot** is one window in the grid, showing one camera; the grid has up to 9. "Tile" is no longer used. Replaces the camera part of 023; the Event pass part of 023 stays. Decision 014's "old slot" means the same camera.
+- Alternatives considered: Keeping 023's meaning and splitting the data model into `camera_slots` and `camera_connections` (more precise for reconnects, but one more concept and table before it is needed).
+- Consequences: The `cameras` table keeps its name. Reconnect data (several LiveKit connections or HQ backup files per camera) is modelled when the schema is written.

@@ -143,7 +143,7 @@ Limits to handle: phone storage space, iOS `MediaRecorder` format differences, a
 - **Auto-director:** when turned on, the main feed automatically switches to the camera with the most reactions over a recent window (for example the last 20 seconds), with a minimum time on each camera (for example 15 seconds) to avoid jumpy switching. The host can override at any time.
 - **Camera labels and pins:** the host names cameras ("Stage", "Main entrance", "Crowd"), reorders, pins, or hides them.
 - **Single camera view:** the viewer taps any camera to watch it directly.
-- **Grid view ("security guard" view):** LiveKit RoomComposite egress combines all cameras into one grid video on the server. Viewers download one stream, not N, so it works well on phones. The grid plays the host's audio source (see section 6). The grid shows **at most 9 tiles (3×3)**, since more are unreadable on a phone. If an event has more than 9 cameras, the host's pinned cameras fill the grid first, then the rest in the host's order; the others are still available in single camera view.
+- **Grid view ("security guard" view):** LiveKit RoomComposite egress combines all cameras into one grid video on the server. Viewers download one stream, not N, so it works well on phones. The grid plays the host's audio source (see section 6). Each window in the grid is a **camera slot**. The grid has **at most 9 camera slots (3×3)**, since more are unreadable on a phone. If an event has more than 9 cameras, the host's pinned cameras fill the grid first, then the rest in the host's order; the others are still available in single camera view.
 - **Picture-in-picture:** the main feed large plus a second camera small. Costs the viewer two streams, so the small one uses a low rendition.
 - **Rewind while live:** HLS supports seeking back within the live window, with a "Jump to live" button.
 - **Schedule and countdown:** before going live, viewers see an event page with the schedule and a countdown ("Ceremony starts in 12:30").
@@ -163,7 +163,7 @@ Many microphones cannot play at once. The **host is responsible for audio**.
 - **If the host has not picked one:** use the host's own camera if the host is streaming, otherwise the first camera that joined. The director page shows "Audio: Camera 1 (automatic) · Change".
 - **Handover:** if the audio camera disconnects or mutes, audio moves to the next connected camera (in join order). If the original camera comes back, audio stays where it is unless the host changes it.
 - Audio does not follow the main feed automatically, so auto-director switches do not make the sound jump around.
-- In the grid, the tile whose audio is playing shows a 🔊 icon. Viewers can mute the grid with the normal player mute button.
+- In the grid, the camera slot whose audio is playing shows a 🔊 icon. Viewers can mute the grid with the normal player mute button.
 - The grid is one combined video, so its audio is baked in. To hear a different camera, the viewer opens that camera's own view.
 - Muted cameras send no audio in any view.
 
@@ -197,8 +197,8 @@ scheduled -> lobby -> live <-> standby
 
 ### Rejoining
 
-- **Same camera slot:** a camera slot is the place in the event that a camera connects to. It keeps the label, position, chat channel, Stream live input, and recording timeline while no device is connected. Each camera stores a rejoin key in the browser; reopening the same link on the same device reconnects it to its camera slot, and recordings continue on that slot's timeline.
-- **New device:** gets a new camera slot.
+- **Same camera:** each camera device stores a rejoin key in the browser. Reopening the same link on the same device reclaims the same camera: same label, same chat channel, same Stream live input, and recordings continue on that camera's timeline.
+- **New device:** joins as a new camera.
 - **Host:** host rights belong to the host's account, not to a device or a camera. If the host's phone dies, the host signs in on another device and opens the director page. The host's camera can drop without affecting host controls.
 
 ### Behind the scenes
@@ -226,7 +226,7 @@ event:<eventId>:cam:<camId>  chat and reactions for one camera
 
 - Viewers subscribe to the event channel plus the channel of the camera they are watching. Switching cameras switches the camera subscription.
 - Comment box toggle: **To everyone** / **To this camera**.
-- Grid view subscribes only to the event channel. The server also publishes a per-second **reaction summary for every camera** on the event channel (for example `{cam-1: ❤️ 12, cam-3: 🎉 40}`), so counts can float over each tile without the viewer subscribing to every camera channel. Grid comments go to the whole event.
+- Grid view subscribes only to the event channel. The server also publishes a per-second **reaction summary for every camera** on the event channel (for example `{cam-1: ❤️ 12, cam-3: 🎉 40}`), so counts can float over each camera slot without the viewer subscribing to every camera channel. Grid comments go to the whole event.
 - Camera operators subscribe to their own camera channel and see reactions and comments live, so viewers can direct them.
 - The host sees all channels.
 
@@ -360,7 +360,7 @@ Costs grow mainly with **viewer minutes**, then with cameras, recording, and dow
 | | Free | Event pass | Pro (subscription) |
 |---|---|---|---|
 | Cameras (max per event) | 3 | 10 | 16, including RTMP pro cameras |
-| Grid tiles | Up to 3 | Up to 9 | Up to 9 |
+| Grid camera slots | Up to 3 | Up to 9 | Up to 9 |
 | AI virtual cameras (after v1) | No | No | Yes, separate limit (for example 2) |
 | How it is paid | Free | One-time payment per event | Monthly subscription |
 | Viewers | Up to 50 | Pass steps, for example up to 100 / 500 / 2,000 | Monthly allowance of events or viewer minutes, overage billed |
