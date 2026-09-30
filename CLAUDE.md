@@ -24,6 +24,7 @@ If you are Claude and the current branch is `main`, create a new branch before m
 
 - Any architectural decision made during a session must be added to `DECISIONS.md` in the same PR.
 - If a change affects the system design, update `ARCHITECTURE.md` in the same PR.
+- Use the terms in `GLOSSARY.md` in code, docs, and UI copy. When a term needed explaining twice, add it there in the same PR.
 
 ## Secrets
 
